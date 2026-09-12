@@ -185,8 +185,9 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .linkbtn.pri{color:var(--on-accent);background:var(--accent);border-color:transparent;box-shadow:0 1px 2px rgba(16,24,40,.18)}
 @media (hover:hover){.linkbtn:hover{filter:brightness(1.04)}.linkbtn:not(.pri):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 40%,transparent)}}
 /* suggested swap */
-.plats{border-top:1px solid var(--line)}
-.plat{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.plats{padding:2px 0}
+.plat{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.plat:first-child{border-top:0}
 .plat .pi.lg{width:20px;height:20px;border-radius:5px;object-fit:contain;flex-shrink:0}
 .plat .nm{font-weight:650}
 .plat .pchip{margin-left:auto;font-size:11px;font-weight:750;letter-spacing:.02em;padding:3px 9px;border-radius:999px;color:var(--faint);background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)}
@@ -257,25 +258,37 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 .benchtoggle{width:100%;text-align:center;padding:9px;font-size:12px;font-weight:700;color:var(--muted);border-top:1px solid var(--line)}
 .sheet{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.45)}
 .sheet.on{display:flex}
-.sheet .box{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.3);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.sheet h3{margin:0 0 12px;font-size:17px}
-.sheet label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.05em}
-.sheet input[type=text]{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
-.sheet select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) calc(50% + 1px),calc(100% - 13px) calc(50% + 1px);background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-.sheet .tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.sheet .box{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.3);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet .shead{position:sticky;top:0;z-index:3;background:var(--card);padding:16px 0 12px}
+.sheet .shead h3{margin:0;font-size:17px}
+/* settings are grouped into recessed cards so the sheet reads as sections, not one long list */
+.grp{margin:0 0 16px}
+.gtitle{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin:0 0 7px 13px}
+.gbox{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:0 13px}
+.gbox > * + *{border-top:1px solid var(--line)}
+.sheet label{display:block;font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px;letter-spacing:-.005em}
+.frow{padding:11px 0}
+.ghint{font-size:11.5px;color:var(--faint);line-height:1.45;padding:10px 0 11px}
+.ghint.foot{padding:14px 2px 0;border:0}
+.sheet input[type=text]{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.sheet select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) calc(50% + 1px),calc(100% - 13px) calc(50% + 1px);background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.sheet .tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-top:0;font-size:14px}
 .sheet .tog .lbl{min-width:0}
-.sheet .tog .lbl .d{display:block;font-size:12px;color:var(--faint);margin-top:2px;line-height:1.35}
+.sheet .tog .lbl .d{display:block;font-size:11.5px;color:var(--faint);margin-top:3px;line-height:1.35}
 .sheet .seg{margin:0}
-.sheet .lgs{border-top:1px solid var(--line);margin-top:2px}
-.sheet .lgs .tog:first-child{border-top:0}
-.sheet .lgs .tog{gap:10px}
-.sheet .lgs .tog span.nm{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sheet .lgs .abin{width:82px;flex-shrink:0;font:inherit;font-size:12.5px;font-weight:750;text-align:center;padding:6px 4px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
-.sheet .lgs .abin:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
-.sheet .lgs .abin::placeholder{font-weight:600;color:var(--faint)}
-.sheet .btns{display:flex;gap:8px;margin-top:16px}
-.sheet .btns button{flex:1;padding:11px;border-radius:11px;font-weight:700;border:1px solid var(--line)}
-.sheet .btns button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* league rows: name flexes, short name and switch hold fixed columns so everything lines up */
+.lgs{padding:2px 0}
+.lghead{display:flex;align-items:center;gap:10px;padding:9px 0 8px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.lgrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.lgs .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lghead .ab{flex:0 0 88px;text-align:center}
+.lghead .sh{flex:0 0 46px;text-align:center}
+.abin{flex:0 0 88px;width:88px;font:inherit;font-size:12.5px;font-weight:750;text-align:center;padding:7px 4px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.abin::placeholder{font-weight:600;color:var(--faint)}
+.abin:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.sheet .btns{position:sticky;bottom:0;z-index:3;display:flex;gap:8px;margin-top:4px;padding:12px 0 0;background:var(--card);border-top:1px solid var(--line)}
+.sheet .btns button{flex:1;padding:12px;border-radius:12px;font-weight:700;border:1px solid var(--line)}
+.sheet .btns button.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .hint{font-size:12px;color:var(--faint);margin-top:6px;line-height:1.4}
 .exp{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 .exp .k{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--line);padding:2px 8px;border-radius:999px}
@@ -303,49 +316,67 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 </div></nav>
 
 <div class="sheet" id="sheet"><div class="box">
-  <h3>Settings</h3>
-  <label>Sleeper username</label>
-  <input type="text" id="inUser" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <div class="hint">Leagues are discovered automatically from this account for the current season.</div>
-  <label>Appearance</label>
-  <div class="seg" id="segTheme">
-    <button data-theme="light">Light</button><button data-theme="dark">Dark</button><button data-theme="system">System</button>
+  <div class="shead"><h3>Settings</h3></div>
+
+  <div class="grp">
+    <div class="gtitle">Account</div>
+    <div class="gbox">
+      <div class="frow"><label for="inUser">Sleeper username</label>
+        <input type="text" id="inUser" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="ghint">Your leagues are found automatically from this account for the current season.</div>
+    </div>
   </div>
 
-  <label>Open the app on</label>
-  <select id="inDefaultView">
-    <option value="alerts">Alerts (recommended)</option>
-    <option value="games">Games</option>
-    <option value="leagues">Leagues</option>
-    <option value="players">Players</option>
-    <option value="parlay">Parlay</option>
-    <option value="last">Whatever tab I used last</option>
-  </select>
+  <div class="grp">
+    <div class="gtitle">Leagues</div>
+    <div class="gbox">
+      <div class="lgs" id="lgList"><div class="ghint" style="border:0">Load your leagues first to pick which ones appear.</div></div>
+    </div>
+  </div>
 
-  <label style="margin-top:16px">Display</label>
-  <div class="tog"><span class="lbl">Betting lines on games<span class="d">Spread, total and moneyline from DraftKings</span></span><span class="sw"><input type="checkbox" id="inOdds"><span class="tr"></span></span></div>
-  <div class="tog"><span class="lbl">Show bench players in Leagues</span><span class="sw"><input type="checkbox" id="inBench"><span class="tr"></span></span></div>
-  <div class="tog"><span class="lbl">Hide games that are final</span><span class="sw"><input type="checkbox" id="inHideFinal"><span class="tr"></span></span></div>
-  <div class="tog"><span class="lbl">Suggest who to start instead<span class="d">Best projected bench swap for that slot, in that league's scoring</span></span><span class="sw"><input type="checkbox" id="inSuggest"><span class="tr"></span></span></div>
-  <label style="margin-top:16px">Platforms</label>
-  <div class="plats" id="platList"></div>
+  <div class="grp">
+    <div class="gtitle">Alerts</div>
+    <div class="gbox">
+      <div class="tog"><span class="lbl">Alert on Questionable players<span class="d">Off = only Doubtful, Out and IR raise an alert</span></span><span class="sw"><input type="checkbox" id="inQ"><span class="tr"></span></span></div>
+      <div class="tog"><span class="lbl">Suggest who to start instead<span class="d">Best projected bench swap for that slot, in that league&rsquo;s scoring</span></span><span class="sw"><input type="checkbox" id="inSuggest"><span class="tr"></span></span></div>
+    </div>
+  </div>
 
-  <label style="margin-top:16px">Sleeper links</label>
-  <select id="inLink">
-    <option value="app">Sleeper app</option>
-    <option value="web">sleeper.com in the browser</option>
-  </select>
-  <div class="hint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whichever league you had open last. On a computer, sleeper.com goes straight to the right roster.</div>
+  <div class="grp">
+    <div class="gtitle">Display</div>
+    <div class="gbox">
+      <div class="frow"><label>Appearance</label>
+        <div class="seg" id="segTheme"><button data-theme="light">Light</button><button data-theme="dark">Dark</button><button data-theme="system">System</button></div></div>
+      <div class="frow"><label for="inDefaultView">Open the app on</label>
+        <select id="inDefaultView">
+          <option value="alerts">Alerts (recommended)</option>
+          <option value="games">Games</option>
+          <option value="leagues">Leagues</option>
+          <option value="players">Players</option>
+          <option value="parlay">Parlay</option>
+          <option value="last">Whatever tab I used last</option>
+        </select></div>
+      <div class="tog"><span class="lbl">Betting lines on games<span class="d">Spread, total and moneyline from DraftKings</span></span><span class="sw"><input type="checkbox" id="inOdds"><span class="tr"></span></span></div>
+      <div class="tog"><span class="lbl">Show bench players in Leagues</span><span class="sw"><input type="checkbox" id="inBench"><span class="tr"></span></span></div>
+      <div class="tog"><span class="lbl">Hide games that are final</span><span class="sw"><input type="checkbox" id="inHideFinal"><span class="tr"></span></span></div>
+    </div>
+  </div>
 
-  <label style="margin-top:16px">Alerts</label>
-  <div class="tog"><span class="lbl">Alert on Questionable players<span class="d">Off = only Doubtful, Out and IR raise an alert</span></span><span class="sw"><input type="checkbox" id="inQ"><span class="tr"></span></span></div>
+  <div class="grp">
+    <div class="gtitle">Links &amp; platforms</div>
+    <div class="gbox">
+      <div class="frow"><label for="inLink">League buttons open</label>
+        <select id="inLink">
+          <option value="app">The Sleeper app</option>
+          <option value="web">sleeper.com in the browser</option>
+        </select></div>
+      <div class="ghint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whichever league you had open last. On a computer, sleeper.com goes straight to the right roster.</div>
+      <div class="plats" id="platList"></div>
+    </div>
+  </div>
 
-  <label style="margin-top:16px">Leagues to show</label>
-  <div class="lgs" id="lgList"><div class="hint" style="padding:10px 0">Load your leagues first to pick which ones appear.</div></div>
-  <div class="hint">The middle box is the short name used on chips and buttons everywhere else. Leave it empty to keep the one picked for you.</div>
-
-  <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save & reload</button></div>
-  <div class="hint" style="margin-top:14px">Data comes straight from Sleeper's public API (read-only) and ESPN's scoreboard. Lineup changes still happen in the Sleeper app — every league and alert has a one-tap link.</div>
+  <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save &amp; reload</button></div>
+  <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only) and ESPN&rsquo;s scoreboard. Lineup changes still happen in Sleeper &mdash; every league and alert has a one-tap link.</div>
 </div></div>
 
 <script>
@@ -1188,8 +1219,9 @@ document.querySelectorAll('#segTheme button').forEach(b => b.addEventListener('c
 function paintLeagueList() {
   const box = $('#lgList');
   const all = S.model && S.model.allLeagues;
-  if (!all || !all.length) { box.innerHTML = `<div class="hint" style="padding:10px 0">Load your leagues first to pick which ones appear.</div>`; return; }
-  box.innerHTML = all.map(l => `<div class="tog"><span class="lbl nm">${esc(l.name)}</span><input class="abin" type="text" data-ab="${esc(l.id)}" value="${esc(S.abbrs[l.id] || '')}" placeholder="${esc(l.auto)}" maxlength="10" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Short name for ${esc(l.name)}"><span class="sw"><input type="checkbox" data-lg="${esc(l.id)}"${S.hiddenLeagues.includes(l.id) ? '' : ' checked'}><span class="tr"></span></span></div>`).join('');
+  if (!all || !all.length) { box.innerHTML = `<div class="ghint" style="border:0">Load your leagues first to pick which ones appear.</div>`; return; }
+  box.innerHTML = `<div class="lghead"><span class="nm">League</span><span class="ab">Short name</span><span class="sh">Show</span></div>` + all.map(l =>
+    `<div class="lgrow"><span class="nm">${esc(l.name)}</span><input class="abin" type="text" data-ab="${esc(l.id)}" value="${esc(S.abbrs[l.id] || '')}" placeholder="${esc(l.auto)}" maxlength="10" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Short name for ${esc(l.name)}"><span class="sw"><input type="checkbox" data-lg="${esc(l.id)}"${S.hiddenLeagues.includes(l.id) ? '' : ' checked'}><span class="tr"></span></span></div>`).join('');
 }
 $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
