@@ -172,17 +172,29 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .lhead .score{text-align:right;flex-shrink:0}
 .lhead .score .big{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .lhead .score .sm{font-size:11px;color:var(--muted)}
-.linkbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;font-size:12.5px;font-weight:700;line-height:1;letter-spacing:-.01em;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background .12s ease,border-color .12s ease,filter .12s ease}
-.linkbtn:active{transform:scale(.955)}
-.linkbtn .sq{width:8px;height:8px;border-radius:999px;margin-left:-1px}
-.linkbtn .go{width:11px;height:11px;opacity:.38;margin-right:-2px;flex-shrink:0}
-.linkbtn.lg{background:var(--bg)}
-.linkbtn.lg:active{background:var(--card)}
-.linkbtn.sec{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 25%,transparent);box-shadow:none}
-.linkbtn.sec .go{opacity:.6}
-.linkbtn.pri{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
-.linkbtn.pri .go{opacity:.75}
-@media (hover:hover){.linkbtn:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}.linkbtn.pri:hover{filter:brightness(1.07)}}
+.linkbtn{display:inline-flex;align-items:center;gap:6px;height:33px;padding:0 12px;font-size:12.5px;font-weight:750;line-height:1;letter-spacing:-.01em;border-radius:999px;white-space:nowrap;-webkit-tap-highlight-color:transparent;color:var(--text);background:var(--card);border:1px solid var(--line);box-shadow:0 1px 1.5px rgba(16,24,40,.05);transition:transform .13s cubic-bezier(.2,.8,.3,1),box-shadow .13s ease,filter .13s ease,background .13s ease}
+.linkbtn:active{transform:scale(.94);box-shadow:none}
+.linkbtn .go{width:11px;height:11px;opacity:.42;margin-right:-3px;flex-shrink:0}
+/* league buttons carry that league's colour, so the button and its chips read as one thing */
+.linkbtn.lg{border-color:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 22%,transparent)}
+.linkbtn.lg .go{opacity:.5}
+.linkbtn.lg.l0{color:var(--l0);background:var(--l0s)} .linkbtn.lg.l1{color:var(--l1);background:var(--l1s)}
+.linkbtn.lg.l2{color:var(--l2);background:var(--l2s)} .linkbtn.lg.l3{color:var(--l3);background:var(--l3s)}
+.linkbtn.lg.l4{color:var(--l4);background:var(--l4s)} .linkbtn.lg.l5{color:var(--l5);background:var(--l5s)}
+.linkbtn.lg.l6{color:var(--l6);background:var(--l6s)} .linkbtn.lg.l7{color:var(--l7);background:var(--l7s)}
+.linkbtn.sec{color:var(--accent);background:var(--accent-soft);border-color:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
+.linkbtn.sec .go{opacity:.55}
+.linkbtn.pri{color:var(--on-accent);background:var(--accent);border-color:transparent;box-shadow:0 1px 2px rgba(16,24,40,.18)}
+.linkbtn.pri .go{opacity:.8}
+@media (hover:hover){.linkbtn:hover{filter:brightness(1.04)}.linkbtn:not(.pri):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 40%,transparent)}}
+/* suggested swap */
+.swaps{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.swap{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:12.5px;line-height:1.35;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--green) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 20%,transparent)}
+.swap .sq{width:8px;height:8px;border-radius:999px}
+.swap .lb{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
+.swap b{font-weight:750;color:var(--text)}
+.swap .mt{color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+.swap .mt b{color:var(--text);font-weight:750}
 .sq{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .sq.l0{background:var(--l0)} .sq.l1{background:var(--l1)} .sq.l2{background:var(--l2)} .sq.l3{background:var(--l3)} .sq.l4{background:var(--l4)} .sq.l5{background:var(--l5)} .sq.l6{background:var(--l6)} .sq.l7{background:var(--l7)}
 .ghead{display:flex;align-items:center;gap:10px;padding:11px 12px;background:color-mix(in srgb,var(--card) 70%,var(--bg))}
@@ -307,12 +319,13 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
   <div class="tog"><span class="lbl">Betting lines on games<span class="d">Spread, total and moneyline from DraftKings</span></span><span class="sw"><input type="checkbox" id="inOdds"><span class="tr"></span></span></div>
   <div class="tog"><span class="lbl">Show bench players in Leagues</span><span class="sw"><input type="checkbox" id="inBench"><span class="tr"></span></span></div>
   <div class="tog"><span class="lbl">Hide games that are final</span><span class="sw"><input type="checkbox" id="inHideFinal"><span class="tr"></span></span></div>
+  <div class="tog"><span class="lbl">Suggest who to start instead<span class="d">Best projected bench swap for that slot, in that league's scoring</span></span><span class="sw"><input type="checkbox" id="inSuggest"><span class="tr"></span></span></div>
   <label style="margin-top:16px">Sleeper links</label>
   <select id="inLink">
-    <option value="web">sleeper.com &mdash; opens the exact league</option>
-    <option value="app">Sleeper app &mdash; opens on its last league</option>
+    <option value="app">Sleeper app</option>
+    <option value="web">sleeper.com in the browser</option>
   </select>
-  <div class="hint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whatever league you had open last. sleeper.com goes straight to the right roster.</div>
+  <div class="hint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whichever league you had open last. On a computer, sleeper.com goes straight to the right roster.</div>
 
   <label style="margin-top:16px">Alerts</label>
   <div class="tog"><span class="lbl">Alert on Questionable players<span class="d">Off = only Doubtful, Out and IR raise an alert</span></span><span class="sw"><input type="checkbox" id="inQ"><span class="tr"></span></span></div>
@@ -354,7 +367,8 @@ const S = {
   username: store.get('username', 'TonyFF'),
   showBench: store.get('showBench', false),
   hideFinal: store.get('hideFinal', false),
-  linkMode: store.get('linkMode', 'web'),
+  linkMode: store.get('linkMode', 'app'),
+  suggest: store.get('suggest', true),
   showOdds: store.get('showOdds', true),
   alertQuestionable: store.get('alertQuestionable', true),
   theme: store.get('theme', 'system'),          // 'light' | 'dark' | 'system'
@@ -404,6 +418,26 @@ async function loadPlayers() {
   }
   store.set('players', { ts: Date.now(), data });
   return data;
+}
+
+/* ---------- weekly projections (unofficial endpoint, same family as the schedule one) ---------- */
+async function loadProj(season, week) {
+  const c = store.get('proj', null);
+  if (c && c.week === week && c.season === season && Date.now() - c.ts < 30 * 60 * 1000 && c.data) return c.data;
+  try {
+    const q = new URLSearchParams({ season_type: 'regular', order_by: 'ppr' });
+    for (const pos of ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']) q.append('position[]', pos);
+    const rows = await getJSON(`https://api.sleeper.com/projections/nfl/${season}/${week}?${q}`);
+    const data = {};
+    const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+    for (const r of rows || []) {
+      const st = r.stats || {};
+      if (st.pts_ppr == null && st.pts_half_ppr == null && st.pts_std == null) continue;
+      data[r.player_id] = [r1(st.pts_ppr), r1(st.pts_half_ppr), r1(st.pts_std)];
+    }
+    store.set('proj', { ts: Date.now(), week, season, data });
+    return data;
+  } catch (e) { return (c && c.data) || {}; }
 }
 
 /* ---------- schedule / game windows ---------- */
@@ -584,8 +618,8 @@ async function loadAll() {
     const week = state.leg || state.week || 1, season = state.season;
     const user = await getJSON(`${API}/user/${encodeURIComponent(S.username)}`);
     if (!user || !user.user_id) throw new Error(`Sleeper user "${S.username}" not found`);
-    const [leaguesRaw, players, gm] = await Promise.all([
-      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season)
+    const [leaguesRaw, players, gm, proj] = await Promise.all([
+      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season), loadProj(season, week)
     ]);
     const leagues = await Promise.all(leaguesRaw.map(async (L, idx) => {
       const [rosters, users, matchups] = await Promise.all([
@@ -593,7 +627,7 @@ async function loadAll() {
       ]);
       return { raw: L, idx, rosters, users, matchups };
     }));
-    S.model = buildModel({ state, week, season, user, leagues, players, games: gm.games, gameList: gm.list });
+    S.model = buildModel({ state, week, season, user, leagues, players, games: gm.games, gameList: gm.list, proj });
     S.updated = new Date();
     store.set('view', S.view);
     // lines load after the first paint so they never delay the numbers that actually matter
@@ -616,7 +650,7 @@ function abbrevLeague(name, used) {
   used.add(b); return b;
 }
 
-function buildModel({ state, week, season, user, leagues, players, games, gameList }) {
+function buildModel({ state, week, season, user, leagues, players, games, gameList, proj = {} }) {
   const me = user.user_id;
   const used = new Set();
   const P = id => players[id] || { n: id, p: '?', t: null, i: null };
@@ -632,7 +666,8 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       const myR = l.rosters.find(r => r.owner_id === me || (r.co_owners || []).includes(me));
       const color = ci % 8;
       const abbr = abbrevLeague(raw.name, used);
-      const out = { id: raw.league_id, name: raw.name, abbr, color, slots, week, myR, url: `https://sleeper.com/leagues/${raw.league_id}/team`, murl: `https://sleeper.com/leagues/${raw.league_id}/matchup`, starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '' };
+      const rec = (raw.scoring_settings || {}).rec ?? 0;
+      const out = { id: raw.league_id, name: raw.name, abbr, color, slots, week, myR, scor: rec >= 1 ? 0 : rec > 0 ? 1 : 2, url: `https://sleeper.com/leagues/${raw.league_id}/team`, murl: `https://sleeper.com/leagues/${raw.league_id}/matchup`, starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '' };
       if (!myR) { out.error = 'No roster found for you in this league'; return out; }
       const st = myR.settings || {};
       out.record = `${st.wins ?? 0}-${st.losses ?? 0}${st.ties ? '-' + st.ties : ''}`;
@@ -687,14 +722,14 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
   for (const lg of L) {
     if (lg.error) { alerts.push({ sev: 3, kind: 'i', title: lg.name, desc: lg.error, leagues: [lg] }); continue; }
     for (const r of lg.starters) {
-      if (r.empty) { alerts.push({ sev: 3, kind: 'o', title: `Empty ${slotLabel(r.slot)} slot`, desc: `You have an open starting spot in ${lg.name}.`, leagues: [lg], pid: null }); continue; }
+      if (r.empty) { alerts.push({ sev: 3, kind: 'o', title: `Empty ${slotLabel(r.slot)} slot`, desc: `You have an open starting spot in ${lg.name}.`, leagues: [lg], spots: [{ lg, slot: r.slot }], pid: null }); continue; }
       const p = r.info;
       const sev = SEV[p.i] || 0;
       if (!p.t) alerts.push({ sev: 3, kind: 'o', title: `${p.n} has no team`, desc: `Starting at ${slotLabel(r.slot)} in ${lg.name} — free agent / inactive.`, leagues: [lg], pid: r.pid });
-      else if (!r.game && Object.keys(games).length) alerts.push({ sev: 3, kind: 'o', title: `${p.n} is on bye`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}.`, leagues: [lg], pid: r.pid, bye: true });
+      else if (!r.game && Object.keys(games).length) alerts.push({ sev: 3, kind: 'o', title: `${p.n} is on bye`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}.`, leagues: [lg], spots: [{ lg, slot: r.slot, locked: false }], pid: r.pid, bye: true });
       if (sev && !(sev === 1 && !S.alertQuestionable)) {
         const when = r.game ? (r.game.state === 'pre' ? `Kicks ${fmtKick(r.game.kick)}` : r.game.state === 'in' ? 'Game in progress' : 'Game is final') : '';
-        alerts.push({ sev, kind: SEV_CLS[sev], title: `${p.n} — ${p.i}${p.ib ? ' (' + p.ib + ')' : ''}`, team: p.t, pos: p.p, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}. ${when}`, leagues: [lg], pid: r.pid, status: p.i });
+        alerts.push({ sev, kind: SEV_CLS[sev], title: `${p.n} — ${p.i}${p.ib ? ' (' + p.ib + ')' : ''}`, team: p.t, pos: p.p, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}. ${when}`, leagues: [lg], spots: [{ lg, slot: r.slot, locked: !!(r.game && r.game.state !== 'pre') }], pid: r.pid, status: p.i });
       }
     }
   }
@@ -703,7 +738,7 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
   const byKey = {};
   for (const a of alerts) {
     const k = a.pid && a.status ? 'inj:' + a.pid : a.pid && a.bye ? 'bye:' + a.pid : null;
-    if (k && byKey[k]) { byKey[k].leagues.push(...a.leagues); byKey[k].desc = byKey[k].desc.replace(/ · in your .*?\./, ` · starting in ${byKey[k].leagues.length} leagues.`); continue; }
+    if (k && byKey[k]) { byKey[k].leagues.push(...a.leagues); byKey[k].spots.push(...(a.spots || [])); byKey[k].desc = byKey[k].desc.replace(/ · in your .*?\./, ` · starting in ${byKey[k].leagues.length} leagues.`); continue; }
     if (k) byKey[k] = a; merged.push(a);
   }
   const conflicts = [];
@@ -715,7 +750,7 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
   merged.sort((a, b) => b.sev - a.sev);
   conflicts.sort((a, b) => (b.tag === 'conflict') - (a.tag === 'conflict') || b.leagues.length - a.leagues.length);
 
-  return { state, week, season, user, leagues: L, players, idx, games, gameList, alerts: merged, conflicts, allLeagues: leagues.map(l => ({ id: l.raw.league_id, name: l.raw.name })) };
+  return { state, week, season, user, leagues: L, players, idx, games, gameList, proj, alerts: merged, conflicts, allLeagues: leagues.map(l => ({ id: l.raw.league_id, name: l.raw.name })) };
 }
 function teamName(l, r) {
   if (!r) return '—';
@@ -723,6 +758,31 @@ function teamName(l, r) {
   return (u && u.metadata && u.metadata.team_name) || (u && u.display_name) || `Team ${r.roster_id}`;
 }
 function posOrder(p) { return ['QB','RB','WR','TE','K','DEF'].indexOf(p) + 1 || 9; }
+/* Who should take the slot instead. Only players who can still be moved: right position for the
+   slot, on a team, game not yet kicked, not already Out/IR. Ranked by this league's scoring. */
+const FLEX_OK = { FLEX:['RB','WR','TE'], WRRB_FLEX:['RB','WR'], REC_FLEX:['WR','TE'], SUPER_FLEX:['QB','RB','WR','TE'], IDP_FLEX:['DL','LB','DB'] };
+const UNSTARTABLE = { Out:1, IR:1, PUP:1, Sus:1, COV:1, DNR:1, NA:1, Doubtful:1 };
+function slotFits(slot, pos) { const ok = FLEX_OK[slot]; return ok ? ok.includes(pos) : slot === pos; }
+function projOf(m, lg, pid) { const r = m && m.proj && m.proj[pid]; return r ? (r[lg.scor ?? 2] ?? r[0] ?? r[2]) : null; }
+function bestSwap(m, lg, slot, outPid) {
+  if (!lg || !lg.bench || !lg.bench.length) return null;
+  const ok = lg.bench.filter(r => r.pid !== outPid && r.info && r.info.t && slotFits(slot, r.info.p) && r.game && r.game.state === 'pre' && !UNSTARTABLE[r.info.i]);
+  if (!ok.length) return null;
+  ok.sort((a, b) => (a.info.i ? 1 : 0) - (b.info.i ? 1 : 0) || (projOf(m, lg, b.pid) ?? -1) - (projOf(m, lg, a.pid) ?? -1) || posOrder(a.info.p) - posOrder(b.info.p));
+  return { row: ok[0], proj: projOf(m, lg, ok[0].pid) };
+}
+function swapRows(a) {
+  if (!S.suggest || !a.spots || !a.spots.length) return '';
+  const multi = a.spots.length > 1, rows = [];
+  for (const sp of a.spots) {
+    if (sp.locked) continue;  // his game already kicked, the slot can't be changed
+    const sw = bestSwap(S.model, sp.lg, sp.slot, a.pid);
+    if (!sw) continue;
+    const p = sw.row.info;
+    rows.push(`<div class="swap">${multi ? `<span class="sq l${sp.lg.color}"></span>` : ''}<span class="lb">Start</span>${logoImg(p.t, 'tl sm')}<b>${esc(shortName(p.n, p))}</b>${injBadge(p)}<span class="mt">${esc(slotLabel(sp.slot))} · ${esc(oppText(sw.row))} · ${esc(fmtKick(sw.row.game.kick))}${sw.proj != null ? ` · <b>${sw.proj}</b> proj` : ''}</span></div>`);
+  }
+  return rows.length ? `<div class="swaps">${rows.join('')}</div>` : '';
+}
 function slotLabel(s) { return SLOT_LABEL[s] || s; }
 
 /* ---------- render helpers ---------- */
@@ -760,8 +820,8 @@ function appHref(lg, web) {
 }
 function sleeperLink(lg, label = 'Fix in Sleeper', url, kind = '') {
   const web = url || lg.url;
-  const dot = kind === 'lg' ? `<span class="sq l${lg.color}"></span>` : '';
-  return `<a class="linkbtn${kind ? ' ' + kind : ''}" href="${esc(appHref(lg, web))}" data-web="${esc(web)}" data-scheme="${esc(schemeHref(lg))}" target="_blank" rel="noopener" aria-label="${esc(label)} in Sleeper">${dot}${esc(label)}${svgGo}</a>`;
+  const cls = kind === 'lg' ? ` lg l${lg.color}` : kind ? ' ' + kind : '';
+  return `<a class="linkbtn${cls}" href="${esc(appHref(lg, web))}" data-web="${esc(web)}" data-scheme="${esc(schemeHref(lg))}" target="_blank" rel="noopener" aria-label="${esc(label)} in Sleeper">${esc(label)}${svgGo}</a>`;
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('a[data-web]'); if (!a || S.linkMode !== 'app' || !IS_IOS || !a.dataset.scheme) return;
@@ -871,7 +931,7 @@ function alertRow(a) {
   const icon = { o: '⛔', d: '⚠️', q: '❓', c: '🔁', m: '⚔️', i: 'ℹ️' }[a.kind] || '•';
   const uniq = [...new Map(a.leagues.map(l => [l.id, l])).values()];
   const links = uniq.map(l => sleeperLink(l, l.abbr, null, 'lg')).join('');
-  return `<div class="alert"><div class="ic ${a.kind === 'm' ? 'c' : a.kind}">${icon}</div><div class="body"><div class="ttl">${a.team ? logoImg(a.team, 'tl sm') : ''}${esc(a.title)}</div><div class="dsc">${esc(a.desc)}</div><div class="act">${links}</div></div></div>`;
+  return `<div class="alert"><div class="ic ${a.kind === 'm' ? 'c' : a.kind}">${icon}</div><div class="body"><div class="ttl">${a.team ? logoImg(a.team, 'tl sm') : ''}${esc(a.title)}</div><div class="dsc">${esc(a.desc)}</div><div class="act">${links}</div>${swapRows(a)}</div></div>`;
 }
 function playersInGame(m, g) {
   const start = [], face = [], both = [];
@@ -1110,6 +1170,7 @@ $('#btnSettings').addEventListener('click', () => {
   $('#inBench').checked = S.showBench;
   $('#inHideFinal').checked = S.hideFinal;
   $('#inLink').value = S.linkMode;
+  $('#inSuggest').checked = S.suggest;
   $('#inOdds').checked = S.showOdds;
   $('#inQ').checked = S.alertQuestionable;
   $('#inDefaultView').value = S.defaultView;
@@ -1124,6 +1185,7 @@ $('#btnSave').addEventListener('click', () => {
   S.showBench = $('#inBench').checked; store.set('showBench', S.showBench);
   S.hideFinal = $('#inHideFinal').checked; store.set('hideFinal', S.hideFinal);
   S.linkMode = $('#inLink').value; store.set('linkMode', S.linkMode);
+  S.suggest = $('#inSuggest').checked; store.set('suggest', S.suggest);
   S.showOdds = $('#inOdds').checked; store.set('showOdds', S.showOdds);
   S.alertQuestionable = $('#inQ').checked; store.set('alertQuestionable', S.alertQuestionable);
   S.defaultView = $('#inDefaultView').value; store.set('defaultView', S.defaultView);
