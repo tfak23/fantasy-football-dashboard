@@ -174,20 +174,23 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .lhead .score .sm{font-size:11px;color:var(--muted)}
 .linkbtn{display:inline-flex;align-items:center;gap:6px;height:33px;padding:0 12px;font-size:12.5px;font-weight:750;line-height:1;letter-spacing:-.01em;border-radius:999px;white-space:nowrap;-webkit-tap-highlight-color:transparent;color:var(--text);background:var(--card);border:1px solid var(--line);box-shadow:0 1px 1.5px rgba(16,24,40,.05);transition:transform .13s cubic-bezier(.2,.8,.3,1),box-shadow .13s ease,filter .13s ease,background .13s ease}
 .linkbtn:active{transform:scale(.94);box-shadow:none}
-.linkbtn .go{width:11px;height:11px;opacity:.42;margin-right:-3px;flex-shrink:0}
+.linkbtn .pi{width:15px;height:15px;border-radius:4px;object-fit:contain;margin-left:-3px;flex-shrink:0}
 /* league buttons carry that league's colour, so the button and its chips read as one thing */
 .linkbtn.lg{border-color:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 22%,transparent)}
-.linkbtn.lg .go{opacity:.5}
 .linkbtn.lg.l0{color:var(--l0);background:var(--l0s)} .linkbtn.lg.l1{color:var(--l1);background:var(--l1s)}
 .linkbtn.lg.l2{color:var(--l2);background:var(--l2s)} .linkbtn.lg.l3{color:var(--l3);background:var(--l3s)}
 .linkbtn.lg.l4{color:var(--l4);background:var(--l4s)} .linkbtn.lg.l5{color:var(--l5);background:var(--l5s)}
 .linkbtn.lg.l6{color:var(--l6);background:var(--l6s)} .linkbtn.lg.l7{color:var(--l7);background:var(--l7s)}
 .linkbtn.sec{color:var(--accent);background:var(--accent-soft);border-color:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
-.linkbtn.sec .go{opacity:.55}
 .linkbtn.pri{color:var(--on-accent);background:var(--accent);border-color:transparent;box-shadow:0 1px 2px rgba(16,24,40,.18)}
-.linkbtn.pri .go{opacity:.8}
 @media (hover:hover){.linkbtn:hover{filter:brightness(1.04)}.linkbtn:not(.pri):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 40%,transparent)}}
 /* suggested swap */
+.plats{border-top:1px solid var(--line)}
+.plat{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.plat .pi.lg{width:20px;height:20px;border-radius:5px;object-fit:contain;flex-shrink:0}
+.plat .nm{font-weight:650}
+.plat .pchip{margin-left:auto;font-size:11px;font-weight:750;letter-spacing:.02em;padding:3px 9px;border-radius:999px;color:var(--faint);background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)}
+.plat .pchip.on{color:var(--green);background:color-mix(in srgb,var(--green) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 28%,transparent)}
 .swaps{margin-top:9px;display:flex;flex-direction:column;gap:5px}
 .swap{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:12.5px;line-height:1.35;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--green) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 20%,transparent)}
 .swap .sq{width:8px;height:8px;border-radius:999px}
@@ -320,6 +323,9 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
   <div class="tog"><span class="lbl">Show bench players in Leagues</span><span class="sw"><input type="checkbox" id="inBench"><span class="tr"></span></span></div>
   <div class="tog"><span class="lbl">Hide games that are final</span><span class="sw"><input type="checkbox" id="inHideFinal"><span class="tr"></span></span></div>
   <div class="tog"><span class="lbl">Suggest who to start instead<span class="d">Best projected bench swap for that slot, in that league's scoring</span></span><span class="sw"><input type="checkbox" id="inSuggest"><span class="tr"></span></span></div>
+  <label style="margin-top:16px">Platforms</label>
+  <div class="plats" id="platList"></div>
+
   <label style="margin-top:16px">Sleeper links</label>
   <select id="inLink">
     <option value="app">Sleeper app</option>
@@ -667,7 +673,7 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       const color = ci % 8;
       const abbr = abbrevLeague(raw.name, used);
       const rec = (raw.scoring_settings || {}).rec ?? 0;
-      const out = { id: raw.league_id, name: raw.name, abbr, color, slots, week, myR, scor: rec >= 1 ? 0 : rec > 0 ? 1 : 2, url: `https://sleeper.com/leagues/${raw.league_id}/team`, murl: `https://sleeper.com/leagues/${raw.league_id}/matchup`, starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '' };
+      const out = { id: raw.league_id, name: raw.name, abbr, color, slots, week, myR, plat: 'sleeper', scor: rec >= 1 ? 0 : rec > 0 ? 1 : 2, url: `https://sleeper.com/leagues/${raw.league_id}/team`, murl: `https://sleeper.com/leagues/${raw.league_id}/matchup`, starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '' };
       if (!myR) { out.error = 'No roster found for you in this league'; return out; }
       const st = myR.settings || {};
       out.record = `${st.wins ?? 0}-${st.losses ?? 0}${st.ties ? '-' + st.ties : ''}`;
@@ -727,7 +733,9 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       const sev = SEV[p.i] || 0;
       if (!p.t) alerts.push({ sev: 3, kind: 'o', title: `${p.n} has no team`, desc: `Starting at ${slotLabel(r.slot)} in ${lg.name} — free agent / inactive.`, leagues: [lg], pid: r.pid });
       else if (!r.game && Object.keys(games).length) alerts.push({ sev: 3, kind: 'o', title: `${p.n} is on bye`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}.`, leagues: [lg], spots: [{ lg, slot: r.slot, locked: false }], pid: r.pid, bye: true });
-      if (sev && !(sev === 1 && !S.alertQuestionable)) {
+      // a player who got hurt in a game that's already over is news, not a decision -- skip it
+      const done = !!(r.game && (r.game.state === 'post' || r.game.completed));
+      if (sev && !done && !(sev === 1 && !S.alertQuestionable)) {
         const when = r.game ? (r.game.state === 'pre' ? `Kicks ${fmtKick(r.game.kick)}` : r.game.state === 'in' ? 'Game in progress' : 'Game is final') : '';
         alerts.push({ sev, kind: SEV_CLS[sev], title: `${p.n} — ${p.i}${p.ib ? ' (' + p.ib + ')' : ''}`, team: p.t, pos: p.p, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}. ${when}`, leagues: [lg], spots: [{ lg, slot: r.slot, locked: !!(r.game && r.game.state !== 'pre') }], pid: r.pid, status: p.i });
       }
@@ -786,7 +794,15 @@ function swapRows(a) {
 function slotLabel(s) { return SLOT_LABEL[s] || s; }
 
 /* ---------- render helpers ---------- */
-const svgGo = '<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+/* Each league belongs to a platform; the button wears that platform's own icon, served from the
+   platform's CDN (same approach as the NFL team logos), so it's obvious where a tap lands. */
+const PLATFORMS = {
+  sleeper: { name: 'Sleeper', icon: 'https://sleeper.com/favicon.ico', live: true },
+  espn:    { name: 'ESPN',    icon: 'https://a.espncdn.com/favicon.ico', live: false },
+  yahoo:   { name: 'Yahoo',   icon: 'https://s.yimg.com/rz/l/favicon.ico', live: false },
+  nfl:     { name: 'NFL.com', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png', live: false }
+};
+const platIcon = (k, cls = 'pi') => { const pf = PLATFORMS[k] || PLATFORMS.sleeper; return `<img class="${cls}" src="${pf.icon}" alt="${esc(pf.name)}" loading="lazy" onerror="this.style.display='none'">`; };
 function chip(lg, extra = '') { return `<span class="chip l${lg.color} ${extra}" title="${esc(lg.name)}">${esc(lg.abbr)}</span>`; }
 function injBadge(p) { const s = SEV[p.i]; return s ? `<span class="badge ${SEV_CLS[s]}">${esc(p.i === 'Questionable' ? 'Q' : p.i === 'Doubtful' ? 'D' : p.i)}</span>` : ''; }
 function gameStatus(g, opts = {}) {
@@ -821,7 +837,8 @@ function appHref(lg, web) {
 function sleeperLink(lg, label = 'Fix in Sleeper', url, kind = '') {
   const web = url || lg.url;
   const cls = kind === 'lg' ? ` lg l${lg.color}` : kind ? ' ' + kind : '';
-  return `<a class="linkbtn${cls}" href="${esc(appHref(lg, web))}" data-web="${esc(web)}" data-scheme="${esc(schemeHref(lg))}" target="_blank" rel="noopener" aria-label="${esc(label)} in Sleeper">${esc(label)}${svgGo}</a>`;
+  const pf = PLATFORMS[lg.plat] || PLATFORMS.sleeper;
+  return `<a class="linkbtn${cls}" href="${esc(appHref(lg, web))}" data-web="${esc(web)}" data-scheme="${esc(schemeHref(lg))}" target="_blank" rel="noopener" aria-label="${esc(label)} in ${esc(pf.name)}">${platIcon(lg.plat)}${esc(label)}</a>`;
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('a[data-web]'); if (!a || S.linkMode !== 'app' || !IS_IOS || !a.dataset.scheme) return;
@@ -1169,6 +1186,8 @@ $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
   $('#inBench').checked = S.showBench;
   $('#inHideFinal').checked = S.hideFinal;
+  $('#platList').innerHTML = Object.keys(PLATFORMS).map(k => { const pf = PLATFORMS[k];
+    return `<div class="plat">${platIcon(k, 'pi lg')}<span class="nm">${esc(pf.name)}</span><span class="pchip${pf.live ? ' on' : ''}">${pf.live ? 'Connected' : 'Coming soon'}</span></div>`; }).join('');
   $('#inLink').value = S.linkMode;
   $('#inSuggest').checked = S.suggest;
   $('#inOdds').checked = S.showOdds;
