@@ -268,7 +268,11 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 .sheet .seg{margin:0}
 .sheet .lgs{border-top:1px solid var(--line);margin-top:2px}
 .sheet .lgs .tog:first-child{border-top:0}
+.sheet .lgs .tog{gap:10px}
 .sheet .lgs .tog span.nm{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .lgs .abin{width:82px;flex-shrink:0;font:inherit;font-size:12.5px;font-weight:750;text-align:center;padding:6px 4px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.sheet .lgs .abin:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.sheet .lgs .abin::placeholder{font-weight:600;color:var(--faint)}
 .sheet .btns{display:flex;gap:8px;margin-top:16px}
 .sheet .btns button{flex:1;padding:11px;border-radius:11px;font-weight:700;border:1px solid var(--line)}
 .sheet .btns button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -338,6 +342,7 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 
   <label style="margin-top:16px">Leagues to show</label>
   <div class="lgs" id="lgList"><div class="hint" style="padding:10px 0">Load your leagues first to pick which ones appear.</div></div>
+  <div class="hint">The middle box is the short name used on chips and buttons everywhere else. Leave it empty to keep the one picked for you.</div>
 
   <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save & reload</button></div>
   <div class="hint" style="margin-top:14px">Data comes straight from Sleeper's public API (read-only) and ESPN's scoreboard. Lineup changes still happen in the Sleeper app — every league and alert has a one-tap link.</div>
@@ -380,6 +385,7 @@ const S = {
   theme: store.get('theme', 'system'),          // 'light' | 'dark' | 'system'
   defaultView: store.get('defaultView', 'alerts'), // 'alerts'|'games'|'leagues'|'players'|'last'
   hiddenLeagues: store.get('hiddenLeagues', []),
+  abbrs: store.get('abbrs', {}),
   playersFilter: 'all',
   parlaySize: store.get('parlaySize', 3),
   parlayPicks: [],
@@ -671,7 +677,9 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       const slots = (raw.roster_positions || []).filter(s => !['BN', 'IR', 'TAXI'].includes(s));
       const myR = l.rosters.find(r => r.owner_id === me || (r.co_owners || []).includes(me));
       const color = ci % 8;
-      const abbr = abbrevLeague(raw.name, used);
+      const custom = String(S.abbrs[raw.league_id] || '').trim().slice(0, 10);
+      const abbr = custom || abbrevLeague(raw.name, used);
+      if (custom) used.add(custom);
       const rec = (raw.scoring_settings || {}).rec ?? 0;
       const out = { id: raw.league_id, name: raw.name, abbr, color, slots, week, myR, plat: 'sleeper', scor: rec >= 1 ? 0 : rec > 0 ? 1 : 2, url: `https://sleeper.com/leagues/${raw.league_id}/team`, murl: `https://sleeper.com/leagues/${raw.league_id}/matchup`, starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '' };
       if (!myR) { out.error = 'No roster found for you in this league'; return out; }
@@ -758,7 +766,8 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
   merged.sort((a, b) => b.sev - a.sev);
   conflicts.sort((a, b) => (b.tag === 'conflict') - (a.tag === 'conflict') || b.leagues.length - a.leagues.length);
 
-  return { state, week, season, user, leagues: L, players, idx, games, gameList, proj, alerts: merged, conflicts, allLeagues: leagues.map(l => ({ id: l.raw.league_id, name: l.raw.name })) };
+  return { state, week, season, user, leagues: L, players, idx, games, gameList, proj, alerts: merged, conflicts, allLeagues: (() => { const au = new Set(); return [...leagues].sort((a, b) => a.raw.name.localeCompare(b.raw.name))
+    .map(l => ({ id: l.raw.league_id, name: l.raw.name, auto: abbrevLeague(l.raw.name, au) })); })() };
 }
 function teamName(l, r) {
   if (!r) return '—';
@@ -1180,7 +1189,7 @@ function paintLeagueList() {
   const box = $('#lgList');
   const all = S.model && S.model.allLeagues;
   if (!all || !all.length) { box.innerHTML = `<div class="hint" style="padding:10px 0">Load your leagues first to pick which ones appear.</div>`; return; }
-  box.innerHTML = all.map(l => `<div class="tog"><span class="lbl nm">${esc(l.name)}</span><span class="sw"><input type="checkbox" data-lg="${esc(l.id)}"${S.hiddenLeagues.includes(l.id) ? '' : ' checked'}><span class="tr"></span></span></div>`).join('');
+  box.innerHTML = all.map(l => `<div class="tog"><span class="lbl nm">${esc(l.name)}</span><input class="abin" type="text" data-ab="${esc(l.id)}" value="${esc(S.abbrs[l.id] || '')}" placeholder="${esc(l.auto)}" maxlength="10" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Short name for ${esc(l.name)}"><span class="sw"><input type="checkbox" data-lg="${esc(l.id)}"${S.hiddenLeagues.includes(l.id) ? '' : ' checked'}><span class="tr"></span></span></div>`).join('');
 }
 $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
@@ -1211,6 +1220,8 @@ $('#btnSave').addEventListener('click', () => {
   S.theme = pendingTheme; store.set('theme', S.theme); applyTheme(S.theme);
   const boxes = document.querySelectorAll('#lgList input[data-lg]');
   if (boxes.length) { S.hiddenLeagues = [...boxes].filter(b => !b.checked).map(b => b.dataset.lg); store.set('hiddenLeagues', S.hiddenLeagues); }
+  const abs = document.querySelectorAll('#lgList input[data-ab]');
+  if (abs.length) { const m = {}; abs.forEach(i => { const v = i.value.replace(/[<>]/g, '').trim().slice(0, 10); if (v) m[i.dataset.ab] = v; }); S.abbrs = m; store.set('abbrs', S.abbrs); }
   $('#sheet').classList.remove('on'); S.model = null; render(); loadAll();
 });
 // swipe between tabs + pull-to-refresh (touch only)
