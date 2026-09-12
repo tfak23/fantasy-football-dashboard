@@ -72,8 +72,20 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.4}
 .chip.l0{color:var(--l0);background:var(--l0s)} .chip.l1{color:var(--l1);background:var(--l1s)} .chip.l2{color:var(--l2);background:var(--l2s)} .chip.l3{color:var(--l3);background:var(--l3s)}
 .chip.l4{color:var(--l4);background:var(--l4s)} .chip.l5{color:var(--l5);background:var(--l5s)} .chip.l6{color:var(--l6);background:var(--l6s)} .chip.l7{color:var(--l7);background:var(--l7s)}
-.chip.ghost{color:var(--muted);background:transparent;border-color:var(--line)}
-.chip.vs{color:var(--muted);background:transparent;border-color:var(--line);text-decoration:line-through;text-decoration-thickness:1px}
+.chip.ghost{color:var(--faint);background:transparent;border-color:var(--line);font-weight:600}
+.chip.vs{color:var(--red);background:transparent;border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.chip.vs::before{content:"vs ";font-weight:600;opacity:.8}
+.chip.ghost::before{content:"BN ";font-weight:700;opacity:.7}
+.tl{width:22px;height:22px;object-fit:contain;vertical-align:middle;flex-shrink:0}
+.tl.sm{width:16px;height:16px;margin-right:4px;vertical-align:-3px}
+.tl.md{width:28px;height:28px}
+.tl.lg{width:40px;height:40px}
+.ghead.team{background:linear-gradient(90deg,var(--ac1) 0%,transparent 45%,transparent 55%,var(--ac2) 100%),var(--card)}
+.ghead .matchup{display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px;letter-spacing:-.01em}
+.ghead .matchup .at{color:var(--faint);font-weight:600;font-size:13px}
+.teamcell{display:inline-flex;align-items:center;gap:5px}
+.gsec.both{color:var(--purple)}
+.pill.both{border-color:color-mix(in srgb,var(--purple) 45%,transparent);background:color-mix(in srgb,var(--purple-soft) 60%,var(--bg))}
 .badge{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px;text-transform:uppercase;line-height:1.3;vertical-align:1px}
 .badge.q{color:var(--yellow);background:var(--yellow-soft)}
 .badge.d{color:var(--orange);background:var(--orange-soft)}
@@ -179,6 +191,7 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
   <div class="hint">Leagues are discovered automatically from this account for the current season.</div>
   <div class="tog" style="margin-top:14px"><span>Show bench players in Leagues</span><input type="checkbox" id="inBench"></div>
   <div class="tog"><span>Hide games that are final</span><input type="checkbox" id="inHideFinal"></div>
+  <div class="tog"><span>Open links in the Sleeper app (phone)</span><input type="checkbox" id="inApp"></div>
   <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save & reload</button></div>
   <div class="hint" style="margin-top:14px">Data comes straight from Sleeper's public API (read-only) and ESPN's scoreboard. Lineup changes still happen in the Sleeper app — every league and alert has a one-tap link.</div>
 </div></div>
@@ -194,6 +207,13 @@ const PRIMETIME_NETS = ['NBC','ESPN','ABC','PRIME','AMAZON','NETFLIX','NFLN','NF
 const SEV = { Out:3, IR:3, PUP:3, Sus:3, COV:3, DNR:3, NA:3, Doubtful:2, Questionable:1 };
 const SEV_CLS = { 3:'o', 2:'d', 1:'q' };
 const SLOT_LABEL = { SUPER_FLEX:'SFLX', FLEX:'FLEX', REC_FLEX:'RFLX', WRRB_FLEX:'W/R', IDP_FLEX:'IDP', DEF:'DEF', DL:'DL', LB:'LB', DB:'DB' };
+const TEAMS = {};                                              // Sleeper abbr → { logo, color, alt, name } (filled from ESPN)
+const ESPN_ABBR = { WAS:'wsh' };                               // Sleeper → ESPN logo slug where they differ
+const logoUrl = t => t ? ((TEAMS[t] && TEAMS[t].logo) || `https://a.espncdn.com/i/teamlogos/nfl/500/${(ESPN_ABBR[t] || t).toLowerCase()}.png`) : '';
+const teamColor = t => (TEAMS[t] && TEAMS[t].color) || '#6b7280';
+const logoImg = (t, cls = 'tl') => t ? `<img class="${cls}" src="${logoUrl(t)}" alt="${esc(t)}" loading="lazy" onerror="this.style.visibility='hidden'">` : '';
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -206,6 +226,7 @@ const S = {
   username: store.get('username', 'TonyFF'),
   showBench: store.get('showBench', false),
   hideFinal: store.get('hideFinal', false),
+  openInApp: store.get('openInApp', true),
   hiddenLeagues: store.get('hiddenLeagues', []),
   view: store.get('view', 'alerts'),
   playersFilter: 'all',
@@ -273,6 +294,7 @@ async function loadGames(week, season) {
       const nets = (comp.broadcasts || []).flatMap(b => b.names || []);
       const d = new Date(ev.date);
       const st = ev.status.type;
+      for (const c of [home, away]) TEAMS[fix(c.team.abbreviation)] = { logo: c.team.logo, color: c.team.color ? '#' + c.team.color : null, alt: c.team.alternateColor ? '#' + c.team.alternateColor : null, name: c.team.displayName };
       const g = {
         id: ev.id, home: fix(home.team.abbreviation), away: fix(away.team.abbreviation),
         hs: home.score, as: away.score, kick: d, nets,
@@ -404,7 +426,7 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       else if (!r.game && Object.keys(games).length) alerts.push({ sev: 3, kind: 'o', title: `${p.n} is on bye`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}.`, leagues: [lg], pid: r.pid, bye: true });
       if (sev) {
         const when = r.game ? (r.game.state === 'pre' ? `Kicks ${fmtKick(r.game.kick)}` : r.game.state === 'in' ? 'Game in progress' : 'Game is final') : '';
-        alerts.push({ sev, kind: SEV_CLS[sev], title: `${p.n} — ${p.i}${p.ib ? ' (' + p.ib + ')' : ''}`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}. ${when}`, leagues: [lg], pid: r.pid, status: p.i });
+        alerts.push({ sev, kind: SEV_CLS[sev], title: `${p.n} — ${p.i}${p.ib ? ' (' + p.ib + ')' : ''}`, team: p.t, pos: p.p, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}. ${when}`, leagues: [lg], pid: r.pid, status: p.i });
       }
     }
   }
@@ -419,8 +441,8 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
   const conflicts = [];
   for (const id in idx) {
     const e = idx[id];
-    if (e.start.length && e.face.length) conflicts.push({ sev: 0, kind: 'c', title: `${e.info.n} — start & face`, desc: `Starting in ${e.start.map(l => l.name).join(', ')}; facing in ${e.face.map(l => l.name).join(', ')}.`, leagues: [...e.start, ...e.face], pid: id, tag: 'conflict' });
-    else if (e.face.length >= 2) conflicts.push({ sev: 0, kind: 'c', title: `${e.info.n} — facing ×${e.face.length}`, desc: `Against you in ${e.face.map(l => l.name).join(', ')}.`, leagues: e.face, pid: id, tag: 'multi' });
+    if (e.start.length && e.face.length) conflicts.push({ sev: 0, kind: 'c', title: e.info.n, team: e.info.t, pos: e.info.p, desc: `Starting in ${e.start.map(l => l.name).join(', ')} · against you in ${e.face.map(l => l.name).join(', ')}.`, leagues: [...e.start, ...e.face], pid: id, tag: 'conflict' });
+    else if (e.face.length >= 2) conflicts.push({ sev: 0, kind: 'm', title: e.info.n, team: e.info.t, pos: e.info.p, desc: `Against you in ${e.face.length} leagues: ${e.face.map(l => l.name).join(', ')}.`, leagues: e.face, pid: id, tag: 'multi' });
   }
   merged.sort((a, b) => b.sev - a.sev);
   conflicts.sort((a, b) => (b.tag === 'conflict') - (a.tag === 'conflict') || b.leagues.length - a.leagues.length);
@@ -456,7 +478,23 @@ function ptsCell(r) {
   if (r.pts == null || (r.game && r.game.state === 'pre')) return '';
   return `<div class="pts">${(+r.pts).toFixed(1)}</div>`;
 }
-function sleeperLink(lg, label = 'Fix in Sleeper', url) { return `<a class="linkbtn" href="${esc(url || lg.url)}" target="_blank" rel="noopener">${svgExt}${esc(label)}</a>`; }
+/* Deep links: Android gets an intent:// URL that opens the Sleeper app directly (falls back to the web page if it isn't
+   installed); iOS tries the sleeper:// scheme and falls back to the web page if nothing opens. Desktop: plain web link. */
+function appHref(url) {
+  if (!S.openInApp) return url;
+  if (IS_ANDROID) { const u = new URL(url); return `intent://${u.host}${u.pathname}#Intent;scheme=https;package=com.sleeperbot;S.browser_fallback_url=${encodeURIComponent(url)};end`; }
+  return url;
+}
+function sleeperLink(lg, label = 'Fix in Sleeper', url) { const u = url || lg.url; return `<a class="linkbtn" href="${esc(appHref(u))}" data-web="${esc(u)}" target="_blank" rel="noopener">${svgExt}${esc(label)}</a>`; }
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[data-web]'); if (!a || !S.openInApp || !IS_IOS) return;
+  e.preventDefault();
+  const web = a.dataset.web, path = web.replace(/^https?:\/\/[^/]+\//, '');
+  const t0 = Date.now();
+  const fallback = setTimeout(() => { if (document.visibilityState === 'visible' && Date.now() - t0 < 2500) window.open(web, '_blank'); }, 1200);
+  document.addEventListener('visibilitychange', () => clearTimeout(fallback), { once: true });
+  window.location.href = 'sleeper://' + path;
+});
 
 /* ---------- views ---------- */
 let lastView = null;
@@ -481,39 +519,50 @@ function render() {
 function vAlerts(m) {
   let h = '';
   const need = m.alerts;
-  h += `<h2>Needs a look <span class="cnt">${need.length}</span></h2>`;
+  h += `<h2>Lineup alerts <span class="cnt">${need.length}</span></h2>`;
   if (!need.length) h += `<div class="card"><div class="empty"><div class="big">✅</div>All starters healthy, no byes, no empty slots.</div></div>`;
   else h += `<div class="card">` + need.map(a => alertRow(a)).join('') + `</div>`;
-  h += `<h2>Cross-league conflicts <span class="cnt">${m.conflicts.length}</span></h2>`;
-  if (!m.conflicts.length) h += `<div class="card"><div class="empty">No start-and-face or double-facing situations this week.</div></div>`;
-  else h += `<div class="card">` + m.conflicts.map(a => alertRow(a)).join('') + `</div>`;
+  const both = m.conflicts.filter(c => c.tag === 'conflict'), multi = m.conflicts.filter(c => c.tag === 'multi');
+  h += `<h2>Start &amp; face <span class="cnt">${both.length}</span></h2>`;
+  if (!both.length) h += `<div class="card"><div class="empty">Nobody you start is also lined up against you this week.</div></div>`;
+  else h += `<div class="card">` + both.map(a => alertRow(a)).join('') + `</div>`;
+  h += `<h2>Facing in multiple leagues <span class="cnt">${multi.length}</span></h2>`;
+  if (!multi.length) h += `<div class="card"><div class="empty">No player is against you in more than one league.</div></div>`;
+  else h += `<div class="card">` + multi.map(a => alertRow(a)).join('') + `</div>`;
   // quick primetime peek
   const pt = m.gameList.filter(g => g.prime && g.state !== 'post');
   if (pt.length) {
     h += `<h2>Primetime this week</h2><div class="card">` + pt.map(g => {
       const mine = playersInGame(m, g);
-      return `<div class="row"><div class="main"><div class="name">${esc(g.away)} @ ${esc(g.home)} <span class="badge pt">${esc(g.nets[0] || 'Prime')}</span></div><div class="meta">${esc(fmtKick(g.kick))} · ${mine.start.length} starting · ${mine.face.length} against</div></div></div>`;
+      return `<div class="row"><div class="main"><div class="name teamcell">${logoImg(g.away)} ${esc(g.away)} <span class="at" style="color:var(--faint);font-weight:600">@</span> ${logoImg(g.home)} ${esc(g.home)} <span class="badge pt">${esc(g.nets[0] || 'Prime')}</span></div><div class="meta">${esc(fmtKick(g.kick))} · ${mine.start.length + mine.both.length} starting · ${mine.face.length + mine.both.length} against</div></div></div>`;
     }).join('') + `</div>`;
   }
   return h;
 }
 function alertRow(a) {
-  const icon = { o: '⛔', d: '⚠️', q: '❓', c: '🔁', i: 'ℹ️' }[a.kind] || '•';
+  const icon = { o: '⛔', d: '⚠️', q: '❓', c: '🔁', m: '⚔️', i: 'ℹ️' }[a.kind] || '•';
   const uniq = [...new Map(a.leagues.map(l => [l.id, l])).values()];
-  const links = uniq.map(l => `<a class="linkbtn" href="${esc(l.url)}" target="_blank" rel="noopener">${svgExt}${esc(l.abbr)}</a>`).join('');
-  return `<div class="alert"><div class="ic ${a.kind}">${icon}</div><div class="body"><div class="ttl">${esc(a.title)}</div><div class="dsc">${esc(a.desc)}</div><div class="act">${links}</div></div></div>`;
+  const links = uniq.map(l => sleeperLink(l, l.abbr)).join('');
+  return `<div class="alert"><div class="ic ${a.kind === 'm' ? 'c' : a.kind}">${icon}</div><div class="body"><div class="ttl">${a.team ? logoImg(a.team, 'tl sm') : ''}${esc(a.title)}</div><div class="dsc">${esc(a.desc)}</div><div class="act">${links}</div></div></div>`;
 }
 function playersInGame(m, g) {
-  const start = [], face = [];
+  const start = [], face = [], both = [];
   for (const id in m.idx) {
     const e = m.idx[id]; if (!e.info.t || (e.info.t !== g.home && e.info.t !== g.away)) continue;
-    if (e.start.length) start.push(e);
-    if (e.face.length) face.push(e);
+    if (e.start.length && e.face.length) both.push(e);
+    else if (e.start.length) start.push(e);
+    else if (e.face.length) face.push(e);
   }
   const ord = e => posOrder(e.info.p);
   start.sort((a, b) => b.start.length - a.start.length || ord(a) - ord(b));
   face.sort((a, b) => b.face.length - a.face.length || ord(a) - ord(b));
-  return { start, face };
+  both.sort((a, b) => ord(a) - ord(b));
+  return { start, face, both };
+}
+function gameHead(g, extra = '') {
+  const info = `${esc(fmtKick(g.kick))}${g.nets[0] ? ' · ' + esc(g.nets[0]) : ''}${g.prime ? ' · <b style="color:var(--purple)">Primetime</b>' : ''}${extra}`;
+  const t = a => `<span class="teamcell">${logoImg(a, 'tl md')}<span>${esc(a)}</span></span>`;
+  return `<div class="ghead team" style="--ac1:${esc(teamColor(g.away))}33;--ac2:${esc(teamColor(g.home))}33"><div class="t"><div class="matchup">${t(g.away)}<span class="at">@</span>${t(g.home)}${scoreTxt(g)}</div><div class="info">${info}</div></div><div class="st">${gameStatus(g)}</div></div>`;
 }
 
 function vGames(m) {
@@ -525,14 +574,15 @@ function vGames(m) {
   for (const [, grp] of groups) {
     h += `<h2>${esc(grp.label)}${grp.prime ? ' <span class="badge pt">Primetime</span>' : ''}</h2>`;
     for (const g of grp.games) {
-      const { start, face } = playersInGame(m, g);
-      if (!start.length && !face.length) {
-        h += `<div class="card" style="opacity:.6"><div class="ghead"><div class="t"><div class="teams">${esc(g.away)} @ ${esc(g.home)}${scoreTxt(g)}</div><div class="info">${esc(fmtKick(g.kick))}${g.nets[0] ? ' · ' + esc(g.nets[0]) : ''} · none of your guys</div></div><div class="st">${gameStatus(g)}</div></div></div>`;
+      const { start, face, both } = playersInGame(m, g);
+      if (!start.length && !face.length && !both.length) {
+        h += `<div class="card" style="opacity:.6">${gameHead(g, ' · none of your guys')}</div>`;
         continue;
       }
-      h += `<div class="card"><div class="ghead"><div class="t"><div class="teams">${esc(g.away)} @ ${esc(g.home)}${scoreTxt(g)}</div><div class="info">${esc(fmtKick(g.kick))}${g.nets[0] ? ' · ' + esc(g.nets[0]) : ''}${g.prime ? ' · <b style="color:var(--purple)">Primetime</b>' : ''}</div></div><div class="st">${gameStatus(g)}</div></div>`;
+      h += `<div class="card">${gameHead(g)}`;
       if (start.length) h += `<div class="gsec">Your starters</div><div class="mini">` + start.map(e => pill(e, 'start')).join('') + `</div>`;
       if (face.length) h += `<div class="gsec vs">Against you</div><div class="mini">` + face.map(e => pill(e, 'face')).join('') + `</div>`;
+      if (both.length) h += `<div class="gsec both">Both sides</div><div class="mini">` + both.map(e => pill(e, 'both')).join('') + `</div>`;
       h += `</div>`;
     }
   }
@@ -540,9 +590,13 @@ function vGames(m) {
 }
 function scoreTxt(g) { return g.state !== 'pre' && (g.as !== '' && g.as != null) ? `<span class="sc">${esc(g.as)}–${esc(g.hs)}</span>` : ''; }
 function pill(e, mode) {
-  const lgs = mode === 'start' ? e.start : e.face;
-  const pts = lgs.map(l => { const row = (mode === 'start' ? l.starters : l.opp.starters).find(r => r.pid === e.id); return row && row.pts != null && row.game && row.game.state !== 'pre' ? (+row.pts).toFixed(1) : null; }).filter(x => x != null);
-  return `<span class="pill ${mode === 'face' ? 'against' : ''}"><span class="pp">${esc(e.info.p)}</span><span class="nm">${esc(shortName(e.info.n, e.info))}</span>${injBadge(e.info)}${lgs.map(l => chip(l, mode === 'face' ? 'vs' : '')).join('')}${pts.length ? `<span class="pp" style="color:var(--text)">${pts.join(' / ')}</span>` : ''}</span>`;
+  const ptsOf = (l, isFace) => { const row = (isFace ? l.opp.starters : l.starters).find(r => r.pid === e.id); return row && row.pts != null && row.game && row.game.state !== 'pre' ? (+row.pts).toFixed(1) : null; };
+  const chips = [];
+  const pts = [];
+  if (mode !== 'face') for (const l of e.start) { chips.push(chip(l)); const p = ptsOf(l, false); if (p != null) pts.push(p); }
+  if (mode !== 'start') for (const l of e.face) { chips.push(chip(l, 'vs')); const p = ptsOf(l, true); if (p != null && mode === 'face') pts.push(p); }
+  const uniqPts = [...new Set(pts)];
+  return `<span class="pill ${mode === 'face' ? 'against' : mode === 'both' ? 'both' : ''}">${logoImg(e.info.t, 'tl sm')}<span class="pp">${esc(e.info.p)}</span><span class="nm">${esc(shortName(e.info.n, e.info))}</span>${injBadge(e.info)}${chips.join('')}${uniqPts.length ? `<span class="pp" style="color:var(--text)">${uniqPts.join(' / ')}</span>` : ''}</span>`;
 }
 function shortName(n, p) { if (p && p.p === 'DEF') return `${p.t || n} D/ST`; const parts = n.split(' '); return parts.length > 1 && parts[0].length > 2 ? parts[0][0] + '. ' + parts.slice(1).join(' ') : n; }
 
@@ -566,7 +620,7 @@ function playerRow(r, bench) {
   if (r.empty) return `<div class="row"><div class="slot">${esc(slotLabel(r.slot))}</div><div class="main"><div class="name" style="color:var(--red)">Empty slot</div></div></div>`;
   const p = r.info;
   const warn = (SEV[p.i] || 0) >= 2 || (!r.game && !bench) || !p.t;
-  return `<div class="row ${bench ? 'bench' : ''}" ${warn ? 'style="background:color-mix(in srgb,var(--red-soft) 45%,transparent)"' : ''}><div class="slot">${esc(slotLabel(r.slot))}</div><div class="main"><div class="name"><span class="pos">${esc(p.p)}</span>${esc(p.n)} ${injBadge(p)}</div><div class="meta">${esc(oppText(r))}</div></div><div class="right">${ptsCell(r)}${gameStatus(r.game)}</div></div>`;
+  return `<div class="row ${bench ? 'bench' : ''}" ${warn ? 'style="background:color-mix(in srgb,var(--red-soft) 45%,transparent)"' : ''}><div class="slot">${esc(slotLabel(r.slot))}</div>${logoImg(p.t, 'tl md')}<div class="main"><div class="name"><span class="pos">${esc(p.p)}</span>${esc(p.n)} ${injBadge(p)}</div><div class="meta">${esc(oppText(r))}</div></div><div class="right">${ptsCell(r)}${gameStatus(r.game)}</div></div>`;
 }
 
 function vPlayers(m) {
@@ -581,9 +635,9 @@ function vPlayers(m) {
   h += `<div class="card">` + list.map(e => {
     const g = e.info.t ? m.games[e.info.t] : null;
     const row = { info: e.info, game: g };
-    return `<div class="row"><div class="main"><div class="name"><span class="pos">${esc(e.info.p)}</span>${esc(e.info.n)} ${injBadge(e.info)}</div><div class="meta">${esc(oppText(row))}</div><div class="chips">${e.start.map(l => chip(l)).join('')}${e.face.map(l => chip(l, 'vs')).join('')}${e.bench.map(l => chip(l, 'ghost')).join('')}</div></div><div class="right"><div class="exp" style="justify-content:flex-end">${e.start.length ? `<span class="k s">Start ×${e.start.length}</span>` : ''}${e.face.length ? `<span class="k v">Vs ×${e.face.length}</span>` : ''}${e.bench.length ? `<span class="k">Bench ×${e.bench.length}</span>` : ''}</div><div style="margin-top:4px">${gameStatus(g)}</div></div></div>`;
+    return `<div class="row">${logoImg(e.info.t, 'tl md')}<div class="main"><div class="name"><span class="pos">${esc(e.info.p)}</span>${esc(e.info.n)} ${injBadge(e.info)}</div><div class="meta">${esc(oppText(row))}</div><div class="chips">${e.start.map(l => chip(l)).join('')}${e.face.map(l => chip(l, 'vs')).join('')}${e.bench.map(l => chip(l, 'ghost')).join('')}</div></div><div class="right"><div class="exp" style="justify-content:flex-end">${e.start.length ? `<span class="k s">Start ×${e.start.length}</span>` : ''}${e.face.length ? `<span class="k v">Vs ×${e.face.length}</span>` : ''}${e.bench.length ? `<span class="k">Bench ×${e.bench.length}</span>` : ''}</div><div style="margin-top:4px">${gameStatus(g)}</div></div></div>`;
   }).join('') + `</div>`;
-  h += `<div class="hint" style="padding:8px 4px">Solid chip = you start him there · struck-through chip = he's against you there · outlined = on your bench.</div>`;
+  h += `<div class="hint" style="padding:8px 4px">Colored chip = you start him in that league · red "vs" chip = he's on the team you're playing there · "BN" chip = on your bench there.</div>`;
   return h;
 }
 
@@ -594,13 +648,14 @@ $('#main').addEventListener('click', e => {
   const bt = e.target.closest('[data-bench]'); if (bt) { const c = bt.closest('.card'); c.classList.toggle('showbench'); bt.textContent = (c.classList.contains('showbench') ? 'Hide' : 'Show') + bt.textContent.slice(bt.textContent.indexOf(' bench')); }
 });
 $('#btnRefresh').addEventListener('click', () => loadAll());
-$('#btnSettings').addEventListener('click', () => { $('#inUser').value = S.username; $('#inBench').checked = S.showBench; $('#inHideFinal').checked = S.hideFinal; $('#sheet').classList.add('on'); });
+$('#btnSettings').addEventListener('click', () => { $('#inUser').value = S.username; $('#inBench').checked = S.showBench; $('#inHideFinal').checked = S.hideFinal; $('#inApp').checked = S.openInApp; $('#sheet').classList.add('on'); });
 $('#btnCancel').addEventListener('click', () => $('#sheet').classList.remove('on'));
 $('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) $('#sheet').classList.remove('on'); });
 $('#btnSave').addEventListener('click', () => {
   const u = $('#inUser').value.trim(); if (u && u !== S.username) { S.username = u; store.set('username', u); }
   S.showBench = $('#inBench').checked; store.set('showBench', S.showBench);
   S.hideFinal = $('#inHideFinal').checked; store.set('hideFinal', S.hideFinal);
+  S.openInApp = $('#inApp').checked; store.set('openInApp', S.openInApp);
   $('#sheet').classList.remove('on'); S.model = null; render(); loadAll();
 });
 // auto-refresh while games are live
