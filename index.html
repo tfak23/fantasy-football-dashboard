@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141922" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f8fb" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Fantasy Football Dashboard">
+<meta name="apple-mobile-web-app-title" content="Two-Minute Drill">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Fantasy Football Dashboard</title>
+<title>Two-Minute Drill</title>
 <style>
 :root{
-  --bg:#f6f7fb; --card:#ffffff; --line:#e6e8ef; --text:#141a26; --muted:#5f6675; --faint:#737b8a;
+  --bg:#f5f8fb; --card:#ffffff; --line:#e6e8ef; --text:#141a26; --muted:#5f6675; --faint:#737b8a;
   --accent:#2f6fed; --accent-soft:#e8f0ff;
   --red:#d92d20; --red-soft:#fee4e2; --orange:#dc6803; --orange-soft:#fef0c7; --yellow:#b54708; --yellow-soft:#fff8dd;
   --green:#079455; --green-soft:#dcfae6; --purple:#7a5af8; --purple-soft:#ebe9fe;
@@ -27,7 +27,7 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0f1117; --card:#171a23; --line:#262a36; --text:#eef0f6; --muted:#b6bccb; --faint:#8b93a5;
+    --bg:#141922; --card:#1c222c; --line:#2b3242; --text:#eef0f6; --muted:#b6bccb; --faint:#8b93a5;
     --accent:#6b9cff; --accent-soft:#1a2745;
     --red:#ff6b6b; --red-soft:#3a1d1d; --orange:#ffab5c; --orange-soft:#3a2a15; --yellow:#ffd166; --yellow-soft:#3a3315;
     --green:#4ade80; --green-soft:#153426; --purple:#b39dff; --purple-soft:#2a2347;
@@ -43,18 +43,27 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .wrap{max-width:720px;margin:0 auto;padding:0 14px calc(84px + env(safe-area-inset-bottom))}
 header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
-header.top .in{max-width:720px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;gap:10px}
-header.top h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+header.top .in{max-width:720px;margin:0 auto;padding:8px 14px;display:flex;align-items:center;gap:9px}
+header.top .logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:block}
+header.top h1{font-size:18px;margin:0;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;min-width:0;flex:0 1 auto}
 header.top h1 .ttl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-@media (max-width:420px){header.top h1{font-size:15px}}
-header.top h1 .wk{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);padding:2px 8px;border-radius:999px}
+@media (max-width:360px){header.top h1{font-size:16px}}
 header.top .sp{flex:1}
+.sub .wkbadge{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--card);border:1px solid var(--line);padding:1px 7px;border-radius:999px;margin-right:6px;vertical-align:1px}
 .iconbtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--muted);border:1px solid var(--line);background:var(--card)}
 .iconbtn svg{width:18px;height:18px}
 .iconbtn.spin svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sub{font-size:12px;color:var(--faint);padding:8px 2px 0}
 .sub b{color:var(--muted);font-weight:600}
+.glance{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r);margin:12px 0 4px;border:1px solid var(--line)}
+.glance .gi{font-size:20px;flex-shrink:0;line-height:1}
+.glance b{display:block;font-size:15px;font-weight:800}
+.glance .gs{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.glance.warn{background:var(--red-soft);border-color:color-mix(in srgb,var(--red) 35%,transparent)}
+.glance.warn b{color:var(--red)}
+.glance.ok{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 35%,transparent)}
+.glance.ok b{color:var(--green)}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 2px 8px;font-weight:700;display:flex;align-items:center;gap:8px}
 h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 7px;font-size:11px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
@@ -187,7 +196,8 @@ body.compact .exp .k{font-size:11px;padding:1px 7px}
 </head>
 <body>
 <header class="top"><div class="in">
-  <h1><span class="ttl">Fantasy Football Dashboard</span> <span class="wk" id="wk">…</span></h1>
+  <img class="logo" src="icon-192.png" alt="" width="30" height="30">
+  <h1><span class="ttl">Two-Minute Drill</span></h1>
   <span class="sp"></span>
   <button class="iconbtn" id="btnRefresh" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
   <button class="iconbtn" id="btnSettings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -249,7 +259,7 @@ const S = {
   openInApp: store.get('openInApp', true),
   compact: store.get('compact', false),
   hiddenLeagues: store.get('hiddenLeagues', []),
-  view: store.get('view', 'alerts'),
+  view: 'alerts', // every fresh open lands on the Alerts "glance" screen — the 2-minute-drill home
   playersFilter: 'all',
   loading: false, error: null, updated: null, model: null
 };
@@ -523,7 +533,6 @@ function render() {
   const changed = lastView !== S.view; lastView = S.view;
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   const m = S.model, main = $('#main');
-  $('#wk').textContent = m ? `Week ${m.week}` : '…';
   const n = m ? m.alerts.filter(a => a.sev >= 1).length : 0;
   const nb = $('#nAlerts'); nb.hidden = !n; nb.textContent = n;
   if (!m) {
@@ -531,7 +540,7 @@ function render() {
     return;
   }
   const upd = S.updated ? new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(S.updated) : '';
-  let html = `<div class="sub">${esc(S.username)} · ${m.leagues.length} leagues · updated <b>${esc(upd)}</b>${S.error ? ` · <span style="color:var(--red)">${esc(S.error)}</span>` : ''}</div>`;
+  let html = `<div class="sub"><span class="wkbadge">Week ${m.week}</span>${esc(S.username)} · ${m.leagues.length} league${m.leagues.length === 1 ? '' : 's'} · updated <b>${esc(upd)}</b>${S.error ? ` · <span style="color:var(--red)">${esc(S.error)}</span>` : ''}</div>`;
   html += ({ alerts: vAlerts, games: vGames, leagues: vLeagues, players: vPlayers }[S.view] || vAlerts)(m);
   main.innerHTML = html;
   if (changed) window.scrollTo(0, 0);
@@ -560,8 +569,15 @@ function skeleton() {
   const card = n => `<div class="card sk-card">${row.repeat(n)}</div>`;
   return `<div class="sub"><span class="skeleton" style="display:inline-block;width:160px"></span></div><h2><span class="skeleton" style="width:120px"></span></h2>${card(2)}<h2><span class="skeleton" style="width:140px"></span></h2>${card(4)}<h2><span class="skeleton" style="width:100px"></span></h2>${card(3)}`;
 }
+function glanceBar(m) {
+  const n = m.alerts.filter(a => a.sev >= 1).length;
+  const next = m.gameList.find(g => g.state === 'pre');
+  const kick = next ? ` · Next kick ${fmtKick(next.kick)}` : '';
+  if (n) return `<div class="glance warn"><span class="gi">⚡</span><div><b>${n} thing${n > 1 ? 's' : ''} need${n > 1 ? '' : 's'} attention</b><span class="gs">Week ${m.week}${kick}</span></div></div>`;
+  return `<div class="glance ok"><span class="gi">✅</span><div><b>You're set for Week ${m.week}</b><span class="gs">No lineup issues${kick}</span></div></div>`;
+}
 function vAlerts(m) {
-  let h = tonightCard(m);
+  let h = glanceBar(m) + tonightCard(m);
   const need = m.alerts;
   h += `<h2>Lineup alerts <span class="cnt">${need.length}</span></h2>`;
   if (!need.length) h += `<div class="card"><div class="empty"><div class="big">✅</div>All starters healthy, no byes, no empty slots.</div></div>`;

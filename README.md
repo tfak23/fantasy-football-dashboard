@@ -1,6 +1,8 @@
-# Fantasy Football Dashboard — all your Sleeper lineups in one place
+# Two-Minute Drill — all your Sleeper lineups in one place
 
-A single-page, phone-first dashboard for every Sleeper league you're in. No backend, no API keys, no login: your phone talks straight to Sleeper's public API and ESPN's public scoreboard.
+A single-page, phone-first dashboard for every Sleeper league you're in. No backend, no API keys, no login: your phone talks straight to Sleeper's public API and ESPN's public scoreboard. Open it, glance at the top of Alerts, and know in under two minutes whether you're set for the week.
+
+The repo is still named `fantasy-football-dashboard` — only the app's name, icon and colors changed.
 
 ## Put it on GitHub Pages (about 3 minutes)
 
@@ -21,7 +23,7 @@ Updating later = replace `index.html` and commit. Pages redeploys automatically.
 
 | Tab | What it shows |
 |---|---|
-| **Alerts** | Anything that needs a decision: starters who are Out / Doubtful / Questionable / IR, starters on bye, empty slots, and cross-league conflicts (a player you start in one league but face in another; a player you face in 2+ leagues). Every alert has a one-tap link that opens that exact league in Sleeper. |
+| **Alerts** | The home screen — opens first, every time. A glance strip up top tells you at once whether anything needs attention or you're all set, then lists anything that needs a decision: starters who are Out / Doubtful / Questionable / IR, starters on bye, empty slots, and cross-league conflicts (a player you start in one league but face in another; a player you face in 2+ leagues). Every alert has a one-tap link that opens that exact league in Sleeper. |
 | **Games** | The week's slate grouped by window (Thu night, Sun early / late, SNF, MNF) with primetime badges and network. Each game lists your starters (tagged by league) and the opposing starters you're up against. Live scores and points once games start. |
 | **Leagues** | Every lineup on one page: slot, player, opponent, kickoff / live status, injury badge, points. Bench is collapsible. |
 | **Players** | Your exposure across leagues: started ×N, benched ×N, facing ×N. Filter by Starting / Facing / Benched. |
