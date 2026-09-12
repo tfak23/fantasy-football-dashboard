@@ -14,7 +14,7 @@
 <title>Fantasy Football Dashboard</title>
 <style>
 :root{
-  --bg:#f6f7fb; --card:#ffffff; --line:#e6e8ef; --text:#141a26; --muted:#6b7280; --faint:#9aa1ae;
+  --bg:#f6f7fb; --card:#ffffff; --line:#e6e8ef; --text:#141a26; --muted:#5f6675; --faint:#737b8a;
   --accent:#2f6fed; --accent-soft:#e8f0ff;
   --red:#d92d20; --red-soft:#fee4e2; --orange:#dc6803; --orange-soft:#fef0c7; --yellow:#b54708; --yellow-soft:#fff8dd;
   --green:#079455; --green-soft:#dcfae6; --purple:#7a5af8; --purple-soft:#ebe9fe;
@@ -27,7 +27,7 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0f1117; --card:#171a23; --line:#262a36; --text:#eef0f6; --muted:#a0a7b8; --faint:#6c7383;
+    --bg:#0f1117; --card:#171a23; --line:#262a36; --text:#eef0f6; --muted:#b6bccb; --faint:#8b93a5;
     --accent:#6b9cff; --accent-soft:#1a2745;
     --red:#ff6b6b; --red-soft:#3a1d1d; --orange:#ffab5c; --orange-soft:#3a2a15; --yellow:#ffd166; --yellow-soft:#3a3315;
     --green:#4ade80; --green-soft:#153426; --purple:#b39dff; --purple-soft:#2a2347;
@@ -58,22 +58,26 @@ header.top .sp{flex:1}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 2px 8px;font-weight:700;display:flex;align-items:center;gap:8px}
 h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 7px;font-size:11px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
-.row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid var(--line);min-height:56px}
+body.compact .row{gap:10px;padding:9px 12px;min-height:44px}
 .row:first-child{border-top:0}
 .row .main{flex:1;min-width:0}
-.row .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.row .name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.compact .row .name{font-size:15px}
+.row .meta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+body.compact .row .meta{font-size:12px}
 .row .right{text-align:right;flex-shrink:0}
 .row .pts{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px}
 .row .when{font-size:12px;color:var(--muted);white-space:nowrap}
 .slot{width:38px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--faint);text-align:center;letter-spacing:.02em}
 .pos{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--line);border-radius:5px;padding:1px 5px;margin-right:4px;vertical-align:1px}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.4}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.4}
+body.compact .chip{font-size:11px;padding:2px 7px}
 .chip.l0{color:var(--l0);background:var(--l0s)} .chip.l1{color:var(--l1);background:var(--l1s)} .chip.l2{color:var(--l2);background:var(--l2s)} .chip.l3{color:var(--l3);background:var(--l3s)}
 .chip.l4{color:var(--l4);background:var(--l4s)} .chip.l5{color:var(--l5);background:var(--l5s)} .chip.l6{color:var(--l6);background:var(--l6s)} .chip.l7{color:var(--l7);background:var(--l7s)}
 .chip.ghost{color:var(--faint);background:transparent;border-color:var(--line);font-weight:600}
-.chip.vs{color:var(--red);background:transparent;border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.chip.vs{color:var(--red);background:transparent;border:1.5px dashed color-mix(in srgb,var(--red) 60%,transparent);border-radius:6px}
 .chip.vs::before{content:"vs ";font-weight:600;opacity:.8}
 .chip.ghost::before{content:"BN ";font-weight:700;opacity:.7}
 .tl{width:22px;height:22px;object-fit:contain;vertical-align:middle;flex-shrink:0}
@@ -90,7 +94,7 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .badge.q{color:var(--yellow);background:var(--yellow-soft)}
 .badge.d{color:var(--orange);background:var(--orange-soft)}
 .badge.o{color:var(--red);background:var(--red-soft)}
-.badge.bye{color:var(--muted);background:var(--line)}
+.badge.bye{color:var(--orange);background:var(--orange-soft);border:1px dashed color-mix(in srgb,var(--orange) 50%,transparent)}
 .badge.live{color:#fff;background:var(--live)}
 .badge.final{color:var(--muted);background:var(--line)}
 .badge.pt{color:var(--purple);background:var(--purple-soft)}
@@ -117,9 +121,10 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .gsec{padding:6px 12px 2px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
 .gsec.vs{color:var(--faint)}
 .mini{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px 10px}
-.pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font-size:13px;font-weight:600;max-width:100%}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:14px;font-weight:600;max-width:100%;min-height:36px}
+body.compact .pill{padding:5px 8px;font-size:13px;min-height:0}
 .pill .pp{font-size:10.5px;color:var(--faint);font-weight:700}
-.pill .chip{padding:1px 6px;font-size:10px}
+.pill .chip{padding:1px 7px;font-size:11px}
 .pill.against{opacity:.85}
 .pill.against .nm{color:var(--muted)}
 .empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:14px}
@@ -134,7 +139,7 @@ h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 
 .alert .act{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs .in{max-width:720px;margin:0 auto;display:flex}
-nav.tabs button{flex:1;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--faint);position:relative}
+nav.tabs button{flex:1;min-height:56px;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;color:var(--faint);position:relative}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button.on{color:var(--accent)}
 nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17px;height:17px;border-radius:999px;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;padding:0 4px}
@@ -142,6 +147,18 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
 .seg button{flex:1;padding:7px 4px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
 .seg button.on{background:var(--accent-soft);color:var(--accent)}
 .err{background:var(--red-soft);color:var(--red);border-radius:10px;padding:10px 12px;font-size:13px;margin:12px 0}
+.sk-card{padding:0}
+.sk-row{display:flex;align-items:center;gap:12px;padding:14px;border-top:1px solid var(--line)}
+.sk-row:first-child{border-top:0}
+.sk-row .skeleton{flex:1}
+.sk-row .skeleton.w2{flex:0 0 40%}
+.sk-row .skeleton.w3{flex:0 0 22%}
+.sk-row .skeleton.circle{flex:0 0 28px;width:28px;height:28px;border-radius:50%}
+.ptr{position:fixed;top:calc(52px + env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:19;transform:translateY(-40px);transition:transform .15s;opacity:0}
+.ptr.show{opacity:1}
+.ptr span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);box-shadow:var(--shadow)}
+.tonight{border-color:color-mix(in srgb,var(--purple) 45%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--purple) 25%,transparent),var(--shadow)}
+.tonight .tn-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 0;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--purple)}
 .skeleton{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 50%,var(--card)),var(--line));background-size:200% 100%;animation:sh 1.2s linear infinite}
 @keyframes sh{to{background-position:-200% 0}}
 .legend{display:flex;flex-wrap:wrap;gap:6px;padding:2px 2px 0}
@@ -163,7 +180,8 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
 .sheet .btns button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 .hint{font-size:12px;color:var(--faint);margin-top:6px;line-height:1.4}
 .exp{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
-.exp .k{font-size:11px;font-weight:800;color:var(--muted);background:var(--line);padding:1px 7px;border-radius:999px}
+.exp .k{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--line);padding:2px 8px;border-radius:999px}
+body.compact .exp .k{font-size:11px;padding:1px 7px}
 .exp .k.s{color:var(--green);background:var(--green-soft)} .exp .k.v{color:var(--purple);background:var(--purple-soft)}
 </style>
 </head>
@@ -175,6 +193,7 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
   <button class="iconbtn" id="btnSettings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div></header>
 
+<div class="ptr" id="ptr"><span>Pull to refresh</span></div>
 <main class="wrap" id="main"><div class="empty"><div class="big">🏈</div>Loading your leagues…</div></main>
 
 <nav class="tabs"><div class="in">
@@ -192,6 +211,7 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
   <div class="tog" style="margin-top:14px"><span>Show bench players in Leagues</span><input type="checkbox" id="inBench"></div>
   <div class="tog"><span>Hide games that are final</span><input type="checkbox" id="inHideFinal"></div>
   <div class="tog"><span>Open links in the Sleeper app (phone)</span><input type="checkbox" id="inApp"></div>
+  <div class="tog"><span>Compact rows (denser layout)</span><input type="checkbox" id="inCompact"></div>
   <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save & reload</button></div>
   <div class="hint" style="margin-top:14px">Data comes straight from Sleeper's public API (read-only) and ESPN's scoreboard. Lineup changes still happen in the Sleeper app — every league and alert has a one-tap link.</div>
 </div></div>
@@ -227,6 +247,7 @@ const S = {
   showBench: store.get('showBench', false),
   hideFinal: store.get('hideFinal', false),
   openInApp: store.get('openInApp', true),
+  compact: store.get('compact', false),
   hiddenLeagues: store.get('hiddenLeagues', []),
   view: store.get('view', 'alerts'),
   playersFilter: 'all',
@@ -506,7 +527,7 @@ function render() {
   const n = m ? m.alerts.filter(a => a.sev >= 1).length : 0;
   const nb = $('#nAlerts'); nb.hidden = !n; nb.textContent = n;
   if (!m) {
-    main.innerHTML = S.error ? `<div class="err">Couldn't load: ${esc(S.error)}</div><div class="empty">Check the username in settings or try again.</div>` : `<div class="empty"><div class="big">🏈</div>Loading your leagues…</div>`;
+    main.innerHTML = S.error ? `<div class="err">Couldn't load: ${esc(S.error)}</div><div class="empty">Check the username in settings or try again.</div>` : skeleton();
     return;
   }
   const upd = S.updated ? new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(S.updated) : '';
@@ -516,8 +537,31 @@ function render() {
   if (changed) window.scrollTo(0, 0);
 }
 
+function tonightCard(m) {
+  const live = m.gameList.filter(g => g.state === 'in');
+  const prime = m.gameList.filter(g => g.prime && g.state !== 'post');
+  const pick = live.length ? live : prime.length ? [prime[0]] : [];
+  if (!pick.length) return '';
+  const todayET = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+  const isToday = g => todayET.format(g.kick) === todayET.format(new Date());
+  return pick.map(g => {
+    const { start, face, both } = playersInGame(m, g);
+    const label = g.state === 'in' ? 'Live now' : isToday(g) ? 'Tonight' : `Next primetime · ${g.win.label}`;
+    let h = `<div class="card tonight"><div class="tn-head"><span>${esc(label)}</span>${g.nets[0] ? `<span class="badge pt">${esc(g.nets[0])}</span>` : ''}</div>${gameHead(g)}`;
+    if (!start.length && !face.length && !both.length) h += `<div class="empty" style="padding:14px">None of your players are in this one.</div>`;
+    if (start.length) h += `<div class="gsec">Your starters</div><div class="mini">` + start.map(e => pill(e, 'start')).join('') + `</div>`;
+    if (face.length) h += `<div class="gsec vs">Against you</div><div class="mini">` + face.map(e => pill(e, 'face')).join('') + `</div>`;
+    if (both.length) h += `<div class="gsec both">Both sides</div><div class="mini">` + both.map(e => pill(e, 'both')).join('') + `</div>`;
+    return h + `</div>`;
+  }).join('');
+}
+function skeleton() {
+  const row = `<div class="sk-row"><div class="skeleton circle"></div><div class="skeleton"></div><div class="skeleton w3"></div></div>`;
+  const card = n => `<div class="card sk-card">${row.repeat(n)}</div>`;
+  return `<div class="sub"><span class="skeleton" style="display:inline-block;width:160px"></span></div><h2><span class="skeleton" style="width:120px"></span></h2>${card(2)}<h2><span class="skeleton" style="width:140px"></span></h2>${card(4)}<h2><span class="skeleton" style="width:100px"></span></h2>${card(3)}`;
+}
 function vAlerts(m) {
-  let h = '';
+  let h = tonightCard(m);
   const need = m.alerts;
   h += `<h2>Lineup alerts <span class="cnt">${need.length}</span></h2>`;
   if (!need.length) h += `<div class="card"><div class="empty"><div class="big">✅</div>All starters healthy, no byes, no empty slots.</div></div>`;
@@ -529,13 +573,15 @@ function vAlerts(m) {
   h += `<h2>Facing in multiple leagues <span class="cnt">${multi.length}</span></h2>`;
   if (!multi.length) h += `<div class="card"><div class="empty">No player is against you in more than one league.</div></div>`;
   else h += `<div class="card">` + multi.map(a => alertRow(a)).join('') + `</div>`;
-  // quick primetime peek
-  const pt = m.gameList.filter(g => g.prime && g.state !== 'post');
+  // the rest of the primetime slate, names included
+  const pt = m.gameList.filter(g => g.prime && g.state !== 'post').slice(1);
   if (pt.length) {
-    h += `<h2>Primetime this week</h2><div class="card">` + pt.map(g => {
-      const mine = playersInGame(m, g);
-      return `<div class="row"><div class="main"><div class="name teamcell">${logoImg(g.away)} ${esc(g.away)} <span class="at" style="color:var(--faint);font-weight:600">@</span> ${logoImg(g.home)} ${esc(g.home)} <span class="badge pt">${esc(g.nets[0] || 'Prime')}</span></div><div class="meta">${esc(fmtKick(g.kick))} · ${mine.start.length + mine.both.length} starting · ${mine.face.length + mine.both.length} against</div></div></div>`;
-    }).join('') + `</div>`;
+    h += `<h2>More primetime this week</h2>`;
+    for (const g of pt) {
+      const { start, face, both } = playersInGame(m, g);
+      const names = arr => arr.map(e => shortName(e.info.n, e.info)).join(', ');
+      h += `<div class="card">${gameHead(g)}<div class="row" style="display:block"><div class="meta" style="white-space:normal">${start.length + both.length ? `<b style="color:var(--text)">Starting:</b> ${esc(names([...start, ...both]))}` : ''}${(start.length + both.length) && (face.length + both.length) ? '<br>' : ''}${face.length + both.length ? `<b style="color:var(--text)">Against you:</b> ${esc(names([...face, ...both]))}` : ''}${!start.length && !face.length && !both.length ? 'None of your players.' : ''}</div></div></div>`;
+    }
   }
   return h;
 }
@@ -648,7 +694,7 @@ $('#main').addEventListener('click', e => {
   const bt = e.target.closest('[data-bench]'); if (bt) { const c = bt.closest('.card'); c.classList.toggle('showbench'); bt.textContent = (c.classList.contains('showbench') ? 'Hide' : 'Show') + bt.textContent.slice(bt.textContent.indexOf(' bench')); }
 });
 $('#btnRefresh').addEventListener('click', () => loadAll());
-$('#btnSettings').addEventListener('click', () => { $('#inUser').value = S.username; $('#inBench').checked = S.showBench; $('#inHideFinal').checked = S.hideFinal; $('#inApp').checked = S.openInApp; $('#sheet').classList.add('on'); });
+$('#btnSettings').addEventListener('click', () => { $('#inUser').value = S.username; $('#inBench').checked = S.showBench; $('#inHideFinal').checked = S.hideFinal; $('#inApp').checked = S.openInApp; $('#inCompact').checked = S.compact; $('#sheet').classList.add('on'); });
 $('#btnCancel').addEventListener('click', () => $('#sheet').classList.remove('on'));
 $('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) $('#sheet').classList.remove('on'); });
 $('#btnSave').addEventListener('click', () => {
@@ -656,8 +702,38 @@ $('#btnSave').addEventListener('click', () => {
   S.showBench = $('#inBench').checked; store.set('showBench', S.showBench);
   S.hideFinal = $('#inHideFinal').checked; store.set('hideFinal', S.hideFinal);
   S.openInApp = $('#inApp').checked; store.set('openInApp', S.openInApp);
+  S.compact = $('#inCompact').checked; store.set('compact', S.compact); document.body.classList.toggle('compact', S.compact);
   $('#sheet').classList.remove('on'); S.model = null; render(); loadAll();
 });
+// swipe between tabs + pull-to-refresh (touch only)
+(() => {
+  const VIEWS = ['alerts', 'games', 'leagues', 'players'];
+  let sx = 0, sy = 0, tracking = false, pulling = false, pulled = 0;
+  const ptr = $('#ptr');
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || $('#sheet').classList.contains('on')) { tracking = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true; pulling = window.scrollY <= 0; pulled = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!tracking) return;
+    const dy = e.touches[0].clientY - sy, dx = e.touches[0].clientX - sx;
+    if (pulling && dy > 0 && Math.abs(dx) < 40 && window.scrollY <= 0) {
+      pulled = dy; ptr.classList.toggle('show', dy > 20); ptr.style.transform = `translateY(${Math.min(dy, 90) - 40}px)`;
+      ptr.firstElementChild.textContent = dy > 80 ? 'Release to refresh' : 'Pull to refresh';
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!tracking) return; tracking = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    ptr.classList.remove('show'); ptr.style.transform = '';
+    if (pulling && pulled > 80) { loadAll(); return; }
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
+      const i = VIEWS.indexOf(S.view), n = dx < 0 ? i + 1 : i - 1;
+      if (n >= 0 && n < VIEWS.length) { S.view = VIEWS[n]; store.set('view', S.view); render(); }
+    }
+  }, { passive: true });
+})();
+document.body.classList.toggle('compact', S.compact);
 // auto-refresh while games are live
 setInterval(() => { if (document.visibilityState === 'visible' && S.model && S.model.gameList.some(g => g.state === 'in')) loadAll(); }, 90 * 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.updated && Date.now() - S.updated > 5 * 60 * 1000) loadAll(); });
