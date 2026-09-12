@@ -309,11 +309,10 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
   <div class="tog"><span class="lbl">Hide games that are final</span><span class="sw"><input type="checkbox" id="inHideFinal"><span class="tr"></span></span></div>
   <label style="margin-top:16px">Sleeper links</label>
   <select id="inLink">
-    <option value="app">Open in the Sleeper app</option>
-    <option value="app2">Open in the app &mdash; alternate link</option>
-    <option value="web">Open sleeper.com in the browser</option>
+    <option value="web">sleeper.com &mdash; opens the exact league</option>
+    <option value="app">Sleeper app &mdash; opens on its last league</option>
   </select>
-  <div class="hint">Every button jumps to that specific league. If the app keeps landing on its own home screen, try the alternate link, then the browser.</div>
+  <div class="hint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whatever league you had open last. sleeper.com goes straight to the right roster.</div>
 
   <label style="margin-top:16px">Alerts</label>
   <div class="tog"><span class="lbl">Alert on Questionable players<span class="d">Off = only Doubtful, Out and IR raise an alert</span></span><span class="sw"><input type="checkbox" id="inQ"><span class="tr"></span></span></div>
@@ -355,7 +354,7 @@ const S = {
   username: store.get('username', 'TonyFF'),
   showBench: store.get('showBench', false),
   hideFinal: store.get('hideFinal', false),
-  linkStyle: store.get('linkStyle', store.get('openInApp', true) ? 'app' : 'web'),
+  linkMode: store.get('linkMode', 'web'),
   showOdds: store.get('showOdds', true),
   alertQuestionable: store.get('alertQuestionable', true),
   theme: store.get('theme', 'system'),          // 'light' | 'dark' | 'system'
@@ -749,13 +748,14 @@ function ptsCell(r) {
 }
 /* Deep links: Android gets an intent:// URL that opens the Sleeper app directly (falls back to the web page if it isn't
    installed); iOS tries the sleeper:// scheme and falls back to the web page if nothing opens. Desktop: plain web link. */
-function schemeHref(lg) { return (S.linkStyle === 'app2' ? 'sleeper://league/' : 'sleeper://leagues/') + lg.id; }
+/* Sleeper's app can't be deep-linked to a league: its apple-app-site-association only claims
+   /topics/, /channels/, /topic/ and /message/ (chat), and the sleeper:// scheme ignores any league
+   path and drops you on whatever league the app had open last. So 'web' is the default -- sleeper.com
+   lands on the exact league every time. 'app' stays available for anyone who wants the app regardless. */
+function schemeHref(lg) { return 'sleeper://leagues/' + lg.id; }
 function appHref(lg, web) {
-  if (S.linkStyle === 'web') return web;
-  const fb = `;S.browser_fallback_url=${encodeURIComponent(web)};end`;
-  if (IS_ANDROID) return S.linkStyle === 'app2'
-    ? `intent://league/${lg.id}#Intent;scheme=sleeper;package=com.sleeperbot${fb}`
-    : `intent://sleeper.com/leagues/${lg.id}#Intent;scheme=https;package=com.sleeperbot${fb}`;
+  if (S.linkMode !== 'app') return web;
+  if (IS_ANDROID) return `intent://sleeper.com/leagues/${lg.id}#Intent;scheme=https;package=com.sleeperbot;S.browser_fallback_url=${encodeURIComponent(web)};end`;
   return web;
 }
 function sleeperLink(lg, label = 'Fix in Sleeper', url, kind = '') {
@@ -764,7 +764,7 @@ function sleeperLink(lg, label = 'Fix in Sleeper', url, kind = '') {
   return `<a class="linkbtn${kind ? ' ' + kind : ''}" href="${esc(appHref(lg, web))}" data-web="${esc(web)}" data-scheme="${esc(schemeHref(lg))}" target="_blank" rel="noopener" aria-label="${esc(label)} in Sleeper">${dot}${esc(label)}${svgGo}</a>`;
 }
 document.addEventListener('click', e => {
-  const a = e.target.closest('a[data-web]'); if (!a || S.linkStyle === 'web' || !IS_IOS || !a.dataset.scheme) return;
+  const a = e.target.closest('a[data-web]'); if (!a || S.linkMode !== 'app' || !IS_IOS || !a.dataset.scheme) return;
   e.preventDefault();
   const web = a.dataset.web;
   const t0 = Date.now();
@@ -1109,7 +1109,7 @@ $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
   $('#inBench').checked = S.showBench;
   $('#inHideFinal').checked = S.hideFinal;
-  $('#inLink').value = S.linkStyle;
+  $('#inLink').value = S.linkMode;
   $('#inOdds').checked = S.showOdds;
   $('#inQ').checked = S.alertQuestionable;
   $('#inDefaultView').value = S.defaultView;
@@ -1123,7 +1123,7 @@ $('#btnSave').addEventListener('click', () => {
   const u = $('#inUser').value.trim(); if (u && u !== S.username) { S.username = u; store.set('username', u); }
   S.showBench = $('#inBench').checked; store.set('showBench', S.showBench);
   S.hideFinal = $('#inHideFinal').checked; store.set('hideFinal', S.hideFinal);
-  S.linkStyle = $('#inLink').value; store.set('linkStyle', S.linkStyle);
+  S.linkMode = $('#inLink').value; store.set('linkMode', S.linkMode);
   S.showOdds = $('#inOdds').checked; store.set('showOdds', S.showOdds);
   S.alertQuestionable = $('#inQ').checked; store.set('alertQuestionable', S.alertQuestionable);
   S.defaultView = $('#inDefaultView').value; store.set('defaultView', S.defaultView);
