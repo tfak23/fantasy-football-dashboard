@@ -102,6 +102,25 @@ header.top .sp{flex:1}
 .sw input:checked + .tr{background:var(--accent)}
 .sw input:checked + .tr::after{transform:translateX(18px)}
 .sw input:focus-visible + .tr{outline:2px solid var(--accent);outline-offset:2px}
+/* parlay builder */
+.prow{display:flex;gap:8px;margin:10px 0 4px}
+.pbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:11px;border:1px solid var(--line);background:var(--card);font-size:14px;font-weight:700;color:var(--text);min-height:44px}
+.pbtn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.leg{display:flex;align-items:center;gap:9px;padding:11px 12px;border-top:1px solid var(--line);min-height:58px}
+.leg:first-child{border-top:0}
+.leg .ln{width:22px;height:22px;border-radius:50%;background:var(--line);color:var(--muted);font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+.leg .main{flex:1;min-width:0}
+.leg .name{font-weight:600;font-size:15px;line-height:1.25}
+.leg .odd{font-variant-numeric:tabular-nums;font-weight:800;font-size:15px;color:var(--green);flex-shrink:0}
+.leg.slot .hintx{font-size:13px;color:var(--faint)}
+.mini-b{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);color:var(--muted);font-size:14px;flex-shrink:0;display:grid;place-items:center;background:var(--bg)}
+.ptotal{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:var(--r);padding:12px 14px;margin-top:10px}
+.ptotal .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ptotal .big{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--accent)}
+.ptotal .ret{text-align:right}
+.row.pick.on{background:var(--accent-soft)}
+.row.pick .add{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);color:var(--faint);display:grid;place-items:center;font-size:15px;font-weight:700;flex-shrink:0}
+.row.pick.on .add{background:var(--accent);border-color:var(--accent);color:#fff}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 2px 8px;font-weight:700;display:flex;align-items:center;gap:8px}
 h2 .cnt{background:var(--line);color:var(--muted);border-radius:999px;padding:0 7px;font-size:11px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px}
@@ -249,6 +268,7 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
   <button data-v="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Games</button>
   <button data-v="leagues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Leagues</button>
   <button data-v="players"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Players</button>
+  <button data-v="parlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v12M17 6v12" stroke-dasharray="2 2"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>Parlay</button>
 </div></nav>
 
 <div class="sheet" id="sheet"><div class="box">
@@ -267,6 +287,7 @@ nav.tabs button .n{position:absolute;top:5px;right:calc(50% - 22px);min-width:17
     <option value="games">Games</option>
     <option value="leagues">Leagues</option>
     <option value="players">Players</option>
+    <option value="parlay">Parlay</option>
     <option value="last">Whatever tab I used last</option>
   </select>
 
@@ -323,6 +344,8 @@ const S = {
   defaultView: store.get('defaultView', 'alerts'), // 'alerts'|'games'|'leagues'|'players'|'last'
   hiddenLeagues: store.get('hiddenLeagues', []),
   playersFilter: 'all',
+  parlaySize: store.get('parlaySize', 3),
+  parlayPicks: [],
   loading: false, error: null, updated: null, model: null
 };
 // Default landing tab: Alerts unless the user asked for something else ('last' restores the tab they left on).
@@ -453,6 +476,87 @@ async function loadOdds(list) {
   }));
   store.set('odds', cache);
 }
+
+/* ---------- anytime-touchdown prices (Kambi / BetRivers: public, no key, CORS-open) ----------
+   DraftKings, FanDuel and Bovada all refuse cross-origin reads, so Kambi is the only book a
+   static page can actually talk to. Fetched lazily the first time the Parlay tab is opened. */
+const KAMBI = 'https://eu-offering-api.kambicdn.com/offering/v2018/rsiusnj';
+const KAMBI_Q = '?lang=en_US&market=US';
+const TD_TTL = 15 * 60 * 1000;
+// Kambi writes "LA Rams" / "NY Jets", so the city prefix alone is ambiguous — key off the nickname.
+const NICK = { Cardinals:'ARI', Falcons:'ATL', Ravens:'BAL', Bills:'BUF', Panthers:'CAR', Bears:'CHI',
+  Bengals:'CIN', Browns:'CLE', Cowboys:'DAL', Broncos:'DEN', Lions:'DET', Packers:'GB', Texans:'HOU',
+  Colts:'IND', Jaguars:'JAX', Chiefs:'KC', Raiders:'LV', Chargers:'LAC', Rams:'LAR', Dolphins:'MIA',
+  Vikings:'MIN', Patriots:'NE', Saints:'NO', Giants:'NYG', Jets:'NYJ', Eagles:'PHI', Steelers:'PIT',
+  '49ers':'SF', Seahawks:'SEA', Buccaneers:'TB', Titans:'TEN', Commanders:'WAS' };
+const kTeam = n => NICK[String(n).split(' ').pop()] || String(n).split(' ')[0];
+const TD = { state: 'idle', byPid: {}, err: null };   // idle | loading | ready | error
+
+const normNm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z ]/g, ' ').replace(/\b(jr|sr|ii|iii|iv|v)\b/g, ' ').replace(/\s+/g, ' ').trim();
+
+async function loadTDOdds(m) {
+  if (TD.state === 'loading' || TD.state === 'ready') return;
+  TD.state = 'loading'; TD.err = null; render();
+  try {
+    const cached = store.get('tdodds', null);
+    if (cached && cached.week === m.week && Date.now() - cached.ts < TD_TTL) {
+      TD.byPid = cached.byPid; TD.state = 'ready'; render(); return;
+    }
+    // only the teams of players actually lined up against us
+    const want = new Set();
+    for (const id in m.idx) { const e = m.idx[id]; if (e.face.length && e.info.t) want.add(e.info.t); }
+    if (!want.size) { TD.byPid = {}; TD.state = 'ready'; render(); return; }
+
+    const lv = await getJSON(`${KAMBI}/listView/american_football/nfl.json${KAMBI_Q}`);
+    const evs = (lv.events || []).map(w => w.event)
+      .filter(e => e && e.homeName && (want.has(kTeam(e.homeName)) || want.has(kTeam(e.awayName))));
+
+    // name indexes, built only from players we care about. Kambi and Sleeper agree ~98% of the
+    // time; the rest are nickname variants (Cam/Cameron Ward), caught by initial+surname+team.
+    const exact = {}, loose = {};
+    for (const id in m.idx) {
+      const e = m.idx[id]; if (!e.face.length) continue;
+      const n = normNm(e.info.n); if (!n) continue;
+      exact[n] = id;
+      const p = n.split(' ');
+      if (p.length >= 2) loose[`${p[0][0]}|${p[p.length - 1]}|${e.info.t || ''}`] = id;
+    }
+
+    const byPid = {};
+    await Promise.all(evs.map(async ev => {
+      try {
+        const r = await getJSON(`${KAMBI}/betoffer/event/${ev.id}.json${KAMBI_Q}`);
+        const teams = [kTeam(ev.homeName), kTeam(ev.awayName)];
+        for (const bo of (r.betOffers || [])) {
+          if (!bo.criterion || bo.criterion.label !== 'Touchdown Scorer') continue;
+          for (const o of (bo.outcomes || [])) {
+            if (o.type !== 'OT_YES' || !o.participant || o.oddsAmerican == null) continue;
+            const n = normNm(o.participant);
+            let pid = exact[n];
+            if (!pid) {
+              const p = n.split(' ');
+              if (p.length >= 2) for (const t of teams) { const k = `${p[0][0]}|${p[p.length - 1]}|${t}`; if (loose[k]) { pid = loose[k]; break; } }
+            }
+            if (!pid) continue;
+            const am = parseInt(o.oddsAmerican, 10);
+            if (isFinite(am) && am !== 0) byPid[pid] = { am };
+          }
+        }
+      } catch (e) { /* one dead game shouldn't sink the slate */ }
+    }));
+    TD.byPid = byPid; TD.state = 'ready';
+    store.set('tdodds', { ts: Date.now(), week: m.week, byPid });
+  } catch (e) {
+    TD.err = e.message || String(e); TD.state = 'error';
+  }
+  render();
+}
+
+/* American ↔ decimal, and the parlay product */
+const amToDec = a => a > 0 ? a / 100 + 1 : 100 / Math.abs(a) + 1;
+const decToAm = d => d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
+const fmtAm = a => (a > 0 ? '+' : '') + a;
 
 /* ---------- main load ---------- */
 async function loadAll() {
@@ -647,7 +751,7 @@ function render() {
   }
   const upd = S.updated ? new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(S.updated) : '';
   let html = `<div class="sub"><span class="wkbadge">Week ${m.week}</span>${esc(S.username)} · ${m.leagues.length} league${m.leagues.length === 1 ? '' : 's'} · updated <b>${esc(upd)}</b>${S.error ? ` · <span style="color:var(--red)">${esc(S.error)}</span>` : ''}</div>`;
-  html += ({ alerts: vAlerts, games: vGames, leagues: vLeagues, players: vPlayers }[S.view] || vAlerts)(m);
+  html += ({ alerts: vAlerts, games: vGames, leagues: vLeagues, players: vPlayers, parlay: vParlay }[S.view] || vAlerts)(m);
   main.innerHTML = html;
   if (changed) window.scrollTo(0, 0);
 }
@@ -849,10 +953,114 @@ function vPlayers(m) {
   return h;
 }
 
+/* ---------- parlay tab ---------- */
+function parlayPool(m) {
+  const out = [];
+  for (const id in m.idx) {
+    const e = m.idx[id];
+    if (!e.face.length) continue;
+    const td = TD.byPid[id];
+    if (!td) continue;
+    out.push({ id, info: e.info, face: e.face, am: td.am });
+  }
+  return out.sort((a, b) => a.am - b.am);   // shortest price (likeliest) first
+}
+const poolNow = () => S.model ? parlayPool(S.model) : [];
+function legRow(p, i) {
+  return `<div class="leg"><div class="ln">${i + 1}</div><div class="main"><div class="name">${logoImg(p.info.t, 'tl sm')}<span class="pos">${esc(p.info.p)}</span>${esc(p.info.n)}</div><div class="chips">${p.face.map(l => chip(l, 'vs')).join('')}</div></div><div class="odd">${esc(fmtAm(p.am))}</div><button class="mini-b" data-prr="${i}" title="Swap this one" aria-label="Swap this leg">&#8635;</button><button class="mini-b" data-prm="${i}" title="Remove" aria-label="Remove this leg">&#10005;</button></div>`;
+}
+function poolRow(p) {
+  const on = S.parlayPicks.includes(p.id);
+  return `<div class="row pick ${on ? 'on' : ''}" data-padd="${esc(p.id)}"><div class="add">${on ? '&#10003;' : '+'}</div><div class="main"><div class="name">${logoImg(p.info.t, 'tl sm')}<span class="pos">${esc(p.info.p)}</span>${esc(p.info.n)}</div><div class="chips">${p.face.map(l => chip(l, 'vs')).join('')}</div></div><div class="right"><div class="pts">${esc(fmtAm(p.am))}</div></div></div>`;
+}
+function vParlay(m) {
+  if (TD.state === 'idle') { loadTDOdds(m); }
+  let h = `<h2>Anytime TD parlay</h2><div class="hint" style="padding:0 2px 4px">Build a parlay out of the players lined up against you this week. Live anytime-touchdown prices from BetRivers.</div>`;
+  if (TD.state === 'idle' || TD.state === 'loading') {
+    const row = `<div class="sk-row"><div class="skeleton circle"></div><div class="skeleton"></div><div class="skeleton w3"></div></div>`;
+    return h + `<div class="card sk-card">${row.repeat(4)}</div>`;
+  }
+  if (TD.state === 'error') return h + `<div class="err">Couldn't load touchdown prices: ${esc(TD.err)}</div><div class="empty">The book's feed may be down. Pull to refresh to try again.</div>`;
+  const pool = parlayPool(m);
+  if (!pool.length) return h + `<div class="card"><div class="empty"><div class="big">🤷</div>No touchdown prices posted yet for anyone you're facing. Books usually put these up a day or two before kickoff.</div></div>`;
+
+  S.parlayPicks = S.parlayPicks.filter(id => pool.some(p => p.id === id)).slice(0, S.parlaySize);
+  h += `<div class="seg">` + [1, 2, 3, 4, 5].map(n => `<button data-psize="${n}" class="${n === S.parlaySize ? 'on' : ''}">${n}</button>`).join('') + `</div>`;
+  h += `<div class="prow"><button class="pbtn pri" data-prand="1">🎲 Randomize</button><button class="pbtn" data-pclear="1">Clear</button></div>`;
+
+  h += `<div class="card">`;
+  for (let i = 0; i < S.parlaySize; i++) {
+    const p = pool.find(x => x.id === S.parlayPicks[i]);
+    h += p ? legRow(p, i)
+      : `<div class="leg slot"><div class="ln">${i + 1}</div><div class="main"><div class="hintx">Empty — pick someone below, or roll one in</div></div><button class="mini-b" data-prr="${i}" title="Roll this one" aria-label="Roll a player into this leg">&#8635;</button></div>`;
+  }
+  h += `</div>`;
+
+  const legs = S.parlayPicks.map(id => pool.find(p => p.id === id)).filter(Boolean);
+  if (legs.length) {
+    const dec = legs.reduce((a, p) => a * amToDec(p.am), 1);
+    h += `<div class="ptotal"><div><div class="lbl">${legs.length}-leg parlay</div><div class="big">${esc(fmtAm(decToAm(dec)))}</div></div><div class="ret"><div class="lbl">$10 returns</div><div class="big">$${(10 * dec).toFixed(2)}</div></div></div>`;
+    h += `<div class="prow"><button class="pbtn pri" data-pcopy="1">Copy parlay</button><a class="pbtn" href="https://sportsbook.draftkings.com/leagues/football/nfl" target="_blank" rel="noopener">DraftKings</a><a class="pbtn" href="https://sportsbook.fanduel.com/navigation/nfl" target="_blank" rel="noopener">FanDuel</a></div>`;
+    h += `<div class="hint" style="padding:8px 2px 0">No sportsbook lets an outside page pre-load a slip — that needs their own internal selection IDs, which they don't expose. So these open the NFL page and Copy puts your legs on the clipboard to paste in. DK and FD prices will run a few cents off these.</div>`;
+  }
+
+  h += `<h2>Facing you this week <span class="cnt">${pool.length}</span></h2>`;
+  h += `<div class="card">` + pool.map(p => poolRow(p)).join('') + `</div>`;
+  h += `<div class="hint" style="padding:8px 4px">Only players on the roster you're up against, in any league, who have a touchdown price posted.</div>`;
+  return h;
+}
+function randomizeParlay() {
+  const pool = poolNow(); if (!pool.length) return;
+  const s = pool.slice();
+  for (let i = s.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [s[i], s[j]] = [s[j], s[i]]; }
+  S.parlayPicks = s.slice(0, Math.min(S.parlaySize, s.length)).map(p => p.id);
+  render();
+}
+function rerollLeg(i) {
+  const pool = poolNow(); if (!pool.length) return;
+  const avail = pool.filter(p => !S.parlayPicks.includes(p.id));
+  if (!avail.length) return;
+  const pick = avail[Math.floor(Math.random() * avail.length)].id;
+  if (i >= S.parlayPicks.length) S.parlayPicks.push(pick); else S.parlayPicks[i] = pick;
+  render();
+}
+function togglePick(id) {
+  const i = S.parlayPicks.indexOf(id);
+  if (i >= 0) S.parlayPicks.splice(i, 1);
+  else { if (S.parlayPicks.length >= S.parlaySize) S.parlayPicks.shift(); S.parlayPicks.push(id); }
+  render();
+}
+function copyParlay(btn) {
+  const pool = poolNow();
+  const legs = S.parlayPicks.map(id => pool.find(p => p.id === id)).filter(Boolean);
+  if (!legs.length) return;
+  const dec = legs.reduce((a, p) => a * amToDec(p.am), 1);
+  const txt = `${legs.length}-leg anytime TD parlay — ${fmtAm(decToAm(dec))} ($10 returns $${(10 * dec).toFixed(2)})\n`
+    + legs.map(p => `• ${p.info.n} (${p.info.p}, ${p.info.t || 'FA'}) ${fmtAm(p.am)}`).join('\n')
+    + `\nPrices: BetRivers`;
+  const flash = () => { const t = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = t; }, 1500); };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); flash(); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(flash).catch(fallback);
+  else fallback();
+}
+
 /* ---------- events ---------- */
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => { S.view = b.dataset.v; store.set('view', S.view); render(); }));
 $('#main').addEventListener('click', e => {
   const pf = e.target.closest('[data-pf]'); if (pf) { S.playersFilter = pf.dataset.pf; render(); return; }
+  const ps = e.target.closest('[data-psize]'); if (ps) { S.parlaySize = +ps.dataset.psize; store.set('parlaySize', S.parlaySize); S.parlayPicks = S.parlayPicks.slice(0, S.parlaySize); render(); return; }
+  const prd = e.target.closest('[data-prand]'); if (prd) { randomizeParlay(); return; }
+  const pcl = e.target.closest('[data-pclear]'); if (pcl) { S.parlayPicks = []; render(); return; }
+  const pcp = e.target.closest('[data-pcopy]'); if (pcp) { copyParlay(pcp); return; }
+  const prr = e.target.closest('[data-prr]'); if (prr) { rerollLeg(+prr.dataset.prr); return; }
+  const prm = e.target.closest('[data-prm]'); if (prm) { S.parlayPicks.splice(+prm.dataset.prm, 1); render(); return; }
+  const pad = e.target.closest('[data-padd]'); if (pad) { togglePick(pad.dataset.padd); return; }
   const bt = e.target.closest('[data-bench]'); if (bt) { const c = bt.closest('.card'); c.classList.toggle('showbench'); bt.textContent = (c.classList.contains('showbench') ? 'Hide' : 'Show') + bt.textContent.slice(bt.textContent.indexOf(' bench')); }
 });
 $('#btnRefresh').addEventListener('click', () => loadAll());
@@ -899,7 +1107,7 @@ $('#btnSave').addEventListener('click', () => {
 });
 // swipe between tabs + pull-to-refresh (touch only)
 (() => {
-  const VIEWS = ['alerts', 'games', 'leagues', 'players'];
+  const VIEWS = ['alerts', 'games', 'leagues', 'players', 'parlay'];
   let sx = 0, sy = 0, tracking = false, pulling = false, pulled = 0;
   const ptr = $('#ptr');
   document.addEventListener('touchstart', e => {
