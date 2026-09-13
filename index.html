@@ -286,6 +286,7 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 .abin{flex:0 0 88px;width:88px;font:inherit;font-size:12.5px;font-weight:750;text-align:center;padding:7px 4px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text)}
 .abin::placeholder{font-weight:600;color:var(--faint)}
 .abin:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.oerr{color:var(--red);font-size:12.5px}
 .sheet .btns{position:sticky;bottom:0;z-index:3;display:flex;gap:8px;margin-top:4px;padding:12px 0 0;background:var(--card);border-top:1px solid var(--line)}
 .sheet .btns button{flex:1;padding:12px;border-radius:12px;font-weight:700;border:1px solid var(--line)}
 .sheet .btns button.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
@@ -392,12 +393,22 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
           <option value="web">sleeper.com in the browser</option>
         </select></div>
       <div class="ghint">Sleeper only registers deep links for its chat screens, so nothing can open the app on a specific league &mdash; it lands on whichever league you had open last. On a computer, sleeper.com goes straight to the right roster.</div>
+      <div class="frow" style="border-top:1px solid var(--line);padding-top:12px">
+        <label>ESPN leagues</label>
+        <div class="lgs" id="espnList"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="espnUrlInput" placeholder="Paste your ESPN &ldquo;My Team&rdquo; URL" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1">
+          <button type="button" id="btnEspnAdd" class="linkbtn pri" style="height:auto;padding:0 16px">Add</button>
+        </div>
+        <div class="oerr" id="espnAddErr" style="min-height:1em;margin-top:5px"></div>
+        <div class="ghint">1. In ESPN, make the league &ldquo;Viewable to Public&rdquo; (League &rarr; Settings) &mdash; private leagues usually won&rsquo;t load.<br>2. Open <b>My Team</b> for your team in that league.<br>3. Copy the page URL and paste it above.</div>
+      </div>
       <div class="plats" id="platList"></div>
     </div>
   </div>
 
   <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save &amp; reload</button></div>
-  <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only) and ESPN&rsquo;s scoreboard. Lineup changes still happen in Sleeper &mdash; every league and alert has a one-tap link.</div>
+  <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only) and ESPN&rsquo;s scoreboard/fantasy APIs. ESPN league linking is unofficial and works best for public leagues &mdash; it can change or break without notice. Lineup changes still happen on each platform &mdash; every league and alert has a one-tap link.</div>
 </div></div>
 
 <div class="sheet" id="shareSheet"><div class="box small">
@@ -426,6 +437,109 @@ const SEV_CLS = { 3:'o', 2:'d', 1:'q' };
 const SLOT_LABEL = { SUPER_FLEX:'SFLX', FLEX:'FLEX', REC_FLEX:'RFLX', WRRB_FLEX:'W/R', IDP_FLEX:'IDP', DEF:'DEF', DL:'DL', LB:'LB', DB:'DB' };
 const TEAMS = {};                                              // Sleeper abbr → { logo, color, alt, name } (filled from ESPN)
 const ESPN_ABBR = { WAS:'wsh' };                               // Sleeper → ESPN logo slug where they differ
+
+/* ---------- ESPN fantasy league linking (public leagues, no login) ----------
+   ESPN's own fantasy API tolerates a plain cross-origin fetch for a league that's
+   set to "Viewable to Public" — confirmed directly against this app's own origin.
+   Player IDs are namespaced 'espn:p:<id>' so they never collide with Sleeper's. */
+const ESPN_FF = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl';
+const ESPN_PRO_TEAM = { 1:'ATL',2:'BUF',3:'CHI',4:'CIN',5:'CLE',6:'DAL',7:'DEN',8:'DET',9:'GB',10:'TEN',
+  11:'IND',12:'KC',13:'LV',14:'LAR',15:'MIA',16:'MIN',17:'NE',18:'NO',19:'NYG',20:'NYJ',21:'PHI',22:'ARI',
+  23:'PIT',24:'LAC',25:'SF',26:'SEA',27:'TB',28:'WAS',29:'CAR',30:'JAX',33:'BAL',34:'HOU' };
+const ESPN_POS = { 1:'QB', 2:'RB', 3:'WR', 4:'TE', 5:'K', 16:'DEF' };
+const ESPN_SLOT = { 0:'QB', 2:'RB', 4:'WR', 6:'TE', 7:'SFLX', 16:'DEF', 17:'K', 23:'FLEX' };
+const ESPN_INJ = { QUESTIONABLE:'Questionable', DOUBTFUL:'Doubtful', OUT:'Out', INJURY_RESERVE:'IR', SUSPENSION:'Sus' };
+const ESPN_STATUS = {};   // `${leagueId}:${teamId}` → { ok, name, error } — feeds the Settings list
+function parseEspnUrl(str) {
+  const s = String(str || '');
+  const lid = s.match(/[?&]leagueId=(\d+)/), tid = s.match(/[?&]teamId=(\d+)/);
+  if (!lid) return null;
+  return { leagueId: lid[1], teamId: tid ? tid[1] : null };
+}
+async function fetchEspnRaw(season) {
+  return Promise.all((S.espnLeagues || []).map(async cfg => {
+    try {
+      const url = `${ESPN_FF}/seasons/${season}/segments/0/leagues/${cfg.leagueId}?view=mRoster&view=mTeam&view=mMatchupScore&view=mSettings`;
+      const data = await getJSON(url);
+      return { cfg, data };
+    } catch (e) { return { cfg, error: e.message || String(e) }; }
+  }));
+}
+/* Turns raw ESPN league JSON into the same league-object shape the Sleeper path builds, so
+   everything downstream (alerts, conflicts, Games/Players tabs) treats both platforms alike.
+   `ent` / `used` are buildModel's shared idx/abbreviation-set, passed in so ESPN players and
+   leagues fold into the same cross-league bookkeeping as Sleeper ones. Never throws: a bad or
+   unexpected ESPN response becomes an error card for that one league, not a broken app. */
+function buildEspnLeagueEntries(espnRaw, week, games, proj, ent, used) {
+  return (espnRaw || []).map(entry => {
+    const { cfg } = entry;
+    const key = `${cfg.leagueId}:${cfg.teamId}`;
+    const id = `espn:${key}`;
+    const url = `https://fantasy.espn.com/football/team?leagueId=${cfg.leagueId}&teamId=${cfg.teamId}`;
+    const fail = msg => {
+      const custom = String(S.abbrs[id] || '').trim().slice(0, 10);
+      const abbr = custom || abbrevLeague(`ESPN ${cfg.leagueId}`, used);
+      if (custom) used.add(custom);
+      ESPN_STATUS[key] = { ok: false, error: msg };
+      return { id, name: `ESPN league ${cfg.leagueId}`, abbr, color: 0, plat: 'espn', scor: 2, url, murl: url,
+        starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '', teamName: '', error: msg };
+    };
+    if (entry.error || !entry.data) return fail(`Couldn't load (${entry.error || 'no data'}) — make the league "Viewable to Public" in ESPN (League → Settings), or double-check the URL.`);
+    try {
+      const { data } = entry;
+      const teams = data.teams || [];
+      const myTeam = teams.find(t => String(t.id) === String(cfg.teamId));
+      const leagueName = (data.settings && data.settings.name) || `ESPN league ${cfg.leagueId}`;
+      const custom = String(S.abbrs[id] || '').trim().slice(0, 10);
+      const abbr = custom || abbrevLeague(leagueName, used);
+      if (custom) used.add(custom);
+      const items = (data.settings && data.settings.scoringSettings && data.settings.scoringSettings.scoringItems) || [];
+      const recItem = items.find(it => it.statId === 53);
+      const rec = recItem ? (recItem.points ?? 0) : 0;
+      const scor = rec >= 1 ? 0 : rec > 0 ? 1 : 2;
+      const out = { id, name: leagueName, abbr, color: 0, plat: 'espn', scor, url, murl: url,
+        starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '', teamName: '' };
+      if (!myTeam) return fail(`Team ${cfg.teamId} not found in this league — double-check the "My Team" URL.`);
+      const teamLabel = t => t.name || `${t.location || ''} ${t.nickname || ''}`.trim() || `Team ${t.id}`;
+      out.teamName = teamLabel(myTeam);
+      const ov = myTeam.record && myTeam.record.overall;
+      if (ov) out.record = `${ov.wins ?? 0}-${ov.losses ?? 0}${ov.ties ? '-' + ov.ties : ''}`;
+      const playerInfo = p => ({ n: p.fullName, p: ESPN_POS[p.defaultPositionId] || 'FLEX', t: ESPN_PRO_TEAM[p.proTeamId] || null, i: ESPN_INJ[p.injuryStatus] || null, ib: null, s: null, num: null });
+      const statFor = (p, src) => { const s = (p.stats || []).find(x => x.scoringPeriodId === week && x.statSourceId === src); return s && s.appliedTotal != null ? Math.round(s.appliedTotal * 10) / 10 : null; };
+      const rosterRows = (team, isMine) => (team.roster && team.roster.entries || []).map(e => {
+        const p = e.playerPoolEntry.player;
+        const pid = 'espn:p:' + p.id;
+        const info = playerInfo(p);
+        const proj0 = statFor(p, 1);
+        if (isMine && proj0 != null) proj[pid] = [proj0, proj0, proj0];
+        const row = { pid, slot: ESPN_SLOT[e.lineupSlotId] || (e.lineupSlotId === 21 ? 'IR' : 'BN'), info, pts: statFor(p, 0), empty: false, bn: e.lineupSlotId === 20 || e.lineupSlotId === 21 };
+        row.game = info.t ? games[info.t] : null;
+        return row;
+      });
+      let myPts = 0;
+      for (const row of rosterRows(myTeam, true)) {
+        if (row.bn) { out.bench.push(row); ent(row.pid, row.info).bench.push(out); }
+        else { out.starters.push(row); ent(row.pid, row.info).start.push(out); if (row.pts != null) myPts += row.pts; }
+      }
+      out.bench.sort((a, b) => posOrder(a.info.p) - posOrder(b.info.p));
+      out.myPts = myPts;
+      const sched = (data.schedule || []).find(m => m.matchupPeriodId === week &&
+        ((m.home && String(m.home.teamId) === String(cfg.teamId)) || (m.away && String(m.away.teamId) === String(cfg.teamId))));
+      if (sched) {
+        const mine = String(sched.home && sched.home.teamId) === String(cfg.teamId);
+        const oppSide = mine ? sched.away : sched.home;
+        const oppTeam = oppSide && teams.find(t => t.id === oppSide.teamId);
+        if (oppTeam) {
+          out.oppPts = oppSide.totalPoints || 0;
+          out.opp = { name: teamLabel(oppTeam), pts: out.oppPts, starters: [] };
+          for (const row of rosterRows(oppTeam, false)) { if (row.bn) continue; out.opp.starters.push(row); ent(row.pid, row.info).face.push(out); }
+        }
+      }
+      ESPN_STATUS[key] = { ok: true, name: out.name };
+      return out;
+    } catch (e) { return fail(`Unexpected response shape (${e.message || e}) — this league may need adjustments.`); }
+  });
+}
 const logoUrl = t => t ? ((TEAMS[t] && TEAMS[t].logo) || `https://a.espncdn.com/i/teamlogos/nfl/500/${(ESPN_ABBR[t] || t).toLowerCase()}.png`) : '';
 const teamColor = t => (TEAMS[t] && TEAMS[t].color) || '#6b7280';
 const logoImg = (t, cls = 'tl') => t ? `<img class="${cls}" src="${logoUrl(t)}" alt="${esc(t)}" loading="lazy" onerror="this.style.visibility='hidden'">` : '';
@@ -452,6 +566,7 @@ const S = {
   defaultView: store.get('defaultView', 'alerts'), // 'alerts'|'games'|'leagues'|'players'|'last'
   hiddenLeagues: store.get('hiddenLeagues', []),
   abbrs: store.get('abbrs', {}),
+  espnLeagues: store.get('espnLeagues', []),   // [{leagueId, teamId}]
   playersFilter: 'all',
   parlaySize: store.get('parlaySize', 3),
   parlayPicks: [],
@@ -697,8 +812,8 @@ async function loadAll() {
     const week = state.leg || state.week || 1, season = state.season;
     const user = await getJSON(`${API}/user/${encodeURIComponent(S.username)}`);
     if (!user || !user.user_id) throw new Error(`Sleeper user "${S.username}" not found`);
-    const [leaguesRaw, players, gm, proj] = await Promise.all([
-      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season), loadProj(season, week)
+    const [leaguesRaw, players, gm, proj, espnRaw] = await Promise.all([
+      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season), loadProj(season, week), fetchEspnRaw(season)
     ]);
     const leagues = await Promise.all(leaguesRaw.map(async (L, idx) => {
       const [rosters, users, matchups] = await Promise.all([
@@ -706,7 +821,7 @@ async function loadAll() {
       ]);
       return { raw: L, idx, rosters, users, matchups };
     }));
-    S.model = buildModel({ state, week, season, user, leagues, players, games: gm.games, gameList: gm.list, proj });
+    S.model = buildModel({ state, week, season, user, leagues, espnRaw, players, games: gm.games, gameList: gm.list, proj });
     S.everLoaded = true;
     S.updated = new Date();
     store.set('view', S.view);
@@ -730,12 +845,12 @@ function abbrevLeague(name, used) {
   used.add(b); return b;
 }
 
-function buildModel({ state, week, season, user, leagues, players, games, gameList, proj = {} }) {
+function buildModel({ state, week, season, user, leagues, espnRaw, players, games, gameList, proj = {} }) {
   const me = user.user_id;
   const used = new Set();
   const P = id => players[id] || { n: id, p: '?', t: null, i: null };
   const idx = {};   // player_id → { p, start:[], bench:[], face:[] }
-  const ent = id => idx[id] || (idx[id] = { id, info: P(id), start: [], bench: [], face: [] });
+  const ent = (id, info) => idx[id] || (idx[id] = { id, info: info || P(id), start: [], bench: [], face: [] });
 
   const L = leagues
     .filter(l => !S.hiddenLeagues.includes(l.raw.league_id))
@@ -798,6 +913,11 @@ function buildModel({ state, week, season, user, leagues, players, games, gameLi
       }
       return out;
     });
+
+  // ESPN leagues fold into the same array so alerts/conflicts/Games/Players treat them like Sleeper's.
+  L.push(...buildEspnLeagueEntries(espnRaw, week, games, proj, ent, used));
+  L.sort((a, b) => a.name.localeCompare(b.name));
+  L.forEach((lg, i) => { lg.color = i % 8; });
 
   /* alerts */
   const alerts = [];
@@ -875,7 +995,7 @@ function slotLabel(s) { return SLOT_LABEL[s] || s; }
    platform's CDN (same approach as the NFL team logos), so it's obvious where a tap lands. */
 const PLATFORMS = {
   sleeper: { name: 'Sleeper', icon: 'https://sleeper.com/favicon.ico', live: true },
-  espn:    { name: 'ESPN',    icon: 'https://a.espncdn.com/favicon.ico', live: false },
+  espn:    { name: 'ESPN',    icon: 'https://a.espncdn.com/favicon.ico', live: true },
   yahoo:   { name: 'Yahoo',   icon: 'https://s.yimg.com/rz/l/favicon.ico', live: false },
   nfl:     { name: 'NFL.com', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png', live: false }
 };
@@ -905,9 +1025,9 @@ function ptsCell(r) {
    /topics/, /channels/, /topic/ and /message/ (chat), and the sleeper:// scheme ignores any league
    path and drops you on whatever league the app had open last. So 'web' is the default -- sleeper.com
    lands on the exact league every time. 'app' stays available for anyone who wants the app regardless. */
-function schemeHref(lg) { return 'sleeper://leagues/' + lg.id; }
+function schemeHref(lg) { return lg.plat === 'espn' ? '' : 'sleeper://leagues/' + lg.id; }
 function appHref(lg, web) {
-  if (S.linkMode !== 'app') return web;
+  if (lg.plat === 'espn' || S.linkMode !== 'app') return web;
   if (IS_ANDROID) return `intent://sleeper.com/leagues/${lg.id}#Intent;scheme=https;package=com.sleeperbot;S.browser_fallback_url=${encodeURIComponent(web)};end`;
   return web;
 }
@@ -995,7 +1115,7 @@ function scoreStrip(m) {
       line = l.record || '—';
     }
     const url = l.opp ? l.murl : l.url;
-    return `<a class="sc ${cls}" href="${esc(appHref(url))}" data-web="${esc(url)}" target="_blank" rel="noopener" title="${esc(l.name)}"><div class="ab"><span class="sq l${l.color}"></span>${esc(l.abbr)}</div><div class="pts">${l.myPts.toFixed(1)}</div><div class="vs">${esc(line)}</div></a>`;
+    return `<a class="sc ${cls}" href="${esc(appHref(l, url))}" data-web="${esc(url)}" target="_blank" rel="noopener" title="${esc(l.name)}"><div class="ab"><span class="sq l${l.color}"></span>${esc(l.abbr)}</div><div class="pts">${l.myPts.toFixed(1)}</div><div class="vs">${esc(line)}</div></a>`;
   }).join('');
   const tot = h2h.length ? `<span class="tot">Winning ${up} of ${h2h.length}</span>` : '';
   return `<div class="scwrap"><div class="scline">This week ${tot}</div><div class="scores">${cards}</div></div>`;
@@ -1266,12 +1386,36 @@ function paintLeagueList() {
   box.innerHTML = `<div class="lghead"><span class="nm">League</span><span class="ab">Short name</span><span class="sh">Show</span></div>` + all.map(l =>
     `<div class="lgrow"><span class="nm">${esc(l.name)}</span><input class="abin" type="text" data-ab="${esc(l.id)}" value="${esc(S.abbrs[l.id] || '')}" placeholder="${esc(l.auto)}" maxlength="10" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Short name for ${esc(l.name)}"><span class="sw"><input type="checkbox" data-lg="${esc(l.id)}"${S.hiddenLeagues.includes(l.id) ? '' : ' checked'}><span class="tr"></span></span></div>`).join('');
 }
+function paintEspnList() {
+  const box = $('#espnList');
+  if (!S.espnLeagues.length) { box.innerHTML = `<div class="ghint" style="border:0;padding:6px 0">No ESPN leagues added yet.</div>`; return; }
+  box.innerHTML = S.espnLeagues.map(cfg => {
+    const key = `${cfg.leagueId}:${cfg.teamId}`;
+    const st = ESPN_STATUS[key];
+    const label = (st && st.name) || `League ${cfg.leagueId} (team ${cfg.teamId})`;
+    const sub = st && st.error ? `<span style="color:var(--red)">${esc(st.error)}</span>` : st && st.ok ? 'Loaded' : 'Not loaded yet — Save to fetch it';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(label)}</div><div style="font-size:11.5px;color:var(--faint);margin-top:1px">${sub}</div></div><button type="button" class="mini-b" data-espn-rm="${esc(key)}" aria-label="Remove ${esc(label)}">&#10005;</button></div>`;
+  }).join('');
+}
+$('#btnEspnAdd').addEventListener('click', () => {
+  const err = $('#espnAddErr');
+  const parsed = parseEspnUrl($('#espnUrlInput').value);
+  if (!parsed || !parsed.teamId) { err.textContent = 'Couldn’t find a league and team in that URL — copy it from the "My Team" page.'; return; }
+  const key = `${parsed.leagueId}:${parsed.teamId}`;
+  if (S.espnLeagues.some(c => `${c.leagueId}:${c.teamId}` === key)) { err.textContent = 'That league is already added.'; return; }
+  S.espnLeagues = [...S.espnLeagues, parsed];
+  store.set('espnLeagues', S.espnLeagues);
+  err.textContent = ''; $('#espnUrlInput').value = '';
+  paintEspnList();
+  loadAll().then(paintEspnList);
+});
 $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
   $('#inBench').checked = S.showBench;
   $('#inHideFinal').checked = S.hideFinal;
-  $('#platList').innerHTML = Object.keys(PLATFORMS).map(k => { const pf = PLATFORMS[k];
+  $('#platList').innerHTML = Object.keys(PLATFORMS).filter(k => k !== 'espn').map(k => { const pf = PLATFORMS[k];
     return `<div class="plat">${platIcon(k, 'pi lg')}<span class="nm">${esc(pf.name)}</span><span class="pchip${pf.live ? ' on' : ''}">${pf.live ? 'Connected' : 'Coming soon'}</span></div>`; }).join('');
+  paintEspnList();
   $('#inLink').value = S.linkMode;
   $('#inSuggest').checked = S.suggest;
   $('#inOdds').checked = S.showOdds;
@@ -1282,7 +1426,11 @@ $('#btnSettings').addEventListener('click', () => {
 });
 function closeSheet() { applyTheme(S.theme); pendingTheme = S.theme; $('#sheet').classList.remove('on'); }
 $('#btnCancel').addEventListener('click', closeSheet);
-$('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) closeSheet(); });
+$('#sheet').addEventListener('click', e => {
+  const rm = e.target.closest('[data-espn-rm]');
+  if (rm) { const key = rm.dataset.espnRm; S.espnLeagues = S.espnLeagues.filter(c => `${c.leagueId}:${c.teamId}` !== key); store.set('espnLeagues', S.espnLeagues); delete ESPN_STATUS[key]; paintEspnList(); loadAll(); return; }
+  if (e.target === $('#sheet')) closeSheet();
+});
 
 /* onboarding: first-run username entry (no settings sheet involved) */
 $('#main').addEventListener('submit', e => {
