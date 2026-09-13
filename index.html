@@ -289,6 +289,26 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
 .sheet .btns{position:sticky;bottom:0;z-index:3;display:flex;gap:8px;margin-top:4px;padding:12px 0 0;background:var(--card);border-top:1px solid var(--line)}
 .sheet .btns button{flex:1;padding:12px;border-radius:12px;font-weight:700;border:1px solid var(--line)}
 .sheet .btns button.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+/* share sheet: shorter than settings, no sticky header/footer needed */
+.sheet .box.small{padding:18px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet .box.small .shead{position:static;padding:0 0 2px}
+.shdesc{font-size:13px;color:var(--muted);line-height:1.45;margin:2px 0 16px}
+.shbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:12px;font-weight:700;font-size:15px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);margin-bottom:14px}
+.shbtn svg{width:18px;height:18px}
+.shlist{background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.shrow{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;font-size:14.5px;font-weight:600;color:var(--text);border-top:1px solid var(--line);text-decoration:none}
+.shrow:first-child{border-top:0}
+.shrow .si{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;background:var(--accent-soft);color:var(--accent)}
+.shrow .si svg{width:17px;height:17px}
+/* first-run onboarding */
+.onb{max-width:360px;margin:14vh auto 0;text-align:center;padding:0 8px}
+.onb .oemoji{font-size:44px;line-height:1;margin-bottom:14px}
+.onb h2{margin:0 0 8px;font-size:20px;text-transform:none;letter-spacing:normal;color:var(--text);font-weight:800;display:block}
+.onb p{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.5}
+.onb form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.onb input{font:inherit;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);text-align:center}
+.onb button{font:inherit;font-size:15px;font-weight:700;padding:12px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)}
+.onb .oerr{color:var(--red);font-size:12.5px;min-height:1em;text-align:center}
 .hint{font-size:12px;color:var(--faint);margin-top:6px;line-height:1.4}
 .exp{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 .exp .k{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--line);padding:2px 8px;border-radius:999px}
@@ -300,6 +320,7 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
   <img class="logo" src="icon-192.png" alt="" width="30" height="30">
   <h1><span class="ttl">Two-Minute Drill</span></h1>
   <span class="sp"></span>
+  <button class="iconbtn" id="btnShare" title="Share" aria-label="Share Two-Minute Drill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
   <button class="iconbtn" id="btnRefresh" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
   <button class="iconbtn" id="btnSettings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div></header>
@@ -379,6 +400,19 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
   <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only) and ESPN&rsquo;s scoreboard. Lineup changes still happen in Sleeper &mdash; every league and alert has a one-tap link.</div>
 </div></div>
 
+<div class="sheet" id="shareSheet"><div class="box small">
+  <div class="shead"><h3>Share Two-Minute Drill</h3></div>
+  <p class="shdesc">Send the link so a friend can set up their own leagues &mdash; everyone who opens it enters their own Sleeper username and only ever sees their own lineups.</p>
+  <button class="shbtn pri" id="shNative" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share&hellip;</button>
+  <div class="shlist">
+    <button class="shrow" id="shCopy"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></span><span>Copy link</span></button>
+    <a class="shrow" id="shText" href="#"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span>Text message</span></a>
+    <a class="shrow" id="shEmail" href="#"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></span><span>Email</span></a>
+    <a class="shrow" id="shWhats" href="#" target="_blank" rel="noopener"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L4 20l1-4.5A8.5 8.5 0 1 1 21 11.5z"/></svg></span><span>WhatsApp</span></a>
+  </div>
+  <div class="btns"><button id="shCancel">Close</button></div>
+</div></div>
+
 <script>
 (() => {
 'use strict';
@@ -406,7 +440,8 @@ const store = {
 };
 
 const S = {
-  username: store.get('username', 'TonyFF'),
+  username: store.get('username', ''),
+  everLoaded: false,
   showBench: store.get('showBench', false),
   hideFinal: store.get('hideFinal', false),
   linkMode: store.get('linkMode', 'app'),
@@ -655,6 +690,7 @@ const fmtAm = a => (a > 0 ? '+' : '') + a;
 /* ---------- main load ---------- */
 async function loadAll() {
   if (S.loading) return;
+  if (!S.username) { S.model = null; S.error = null; render(); return; }
   S.loading = true; S.error = null; $('#btnRefresh').classList.add('spin');
   try {
     const state = await getJSON(`${API}/state/nfl`);
@@ -671,6 +707,7 @@ async function loadAll() {
       return { raw: L, idx, rosters, users, matchups };
     }));
     S.model = buildModel({ state, week, season, user, leagues, players, games: gm.games, gameList: gm.list, proj });
+    S.everLoaded = true;
     S.updated = new Date();
     store.set('view', S.view);
     // lines load after the first paint so they never delay the numbers that actually matter
@@ -899,7 +936,7 @@ function render() {
   const n = m ? m.alerts.filter(a => a.sev >= 1).length : 0;
   const nb = $('#nAlerts'); nb.hidden = !n; nb.textContent = n;
   if (!m) {
-    main.innerHTML = S.error ? `<div class="err">Couldn't load: ${esc(S.error)}</div><div class="empty">Check the username in settings or try again.</div>` : skeleton();
+    main.innerHTML = (!S.username || (S.error && !S.everLoaded)) ? onboarding(S.error) : S.error ? `<div class="err">Couldn't load: ${esc(S.error)}</div><div class="empty">Check the username in settings or try again.</div>` : skeleton();
     return;
   }
   const upd = S.updated ? new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(S.updated) : '';
@@ -926,6 +963,12 @@ function tonightCard(m) {
     if (both.length) h += `<div class="gsec both">Both sides</div><div class="mini">` + both.map(e => pill(e, 'both')).join('') + `</div>`;
     return h + `</div>`;
   }).join('');
+}
+function onboarding(err) {
+  return `<div class="onb"><div class="oemoji">🏈</div><h2>Welcome to Two-Minute Drill</h2>
+    <p>See every one of your Sleeper lineups &mdash; alerts, primetime games, start/sit calls &mdash; in one place. Enter your Sleeper username to pull in your own leagues.</p>
+    <form id="onbForm"><input type="text" id="onbUser" placeholder="Sleeper username" value="${esc(S.username || '')}" autocapitalize="off" autocorrect="off" spellcheck="false" autofocus><div class="oerr" id="onbErr">${err ? esc(err) : ''}</div><button type="submit">View my leagues</button></form>
+  </div>`;
 }
 function skeleton() {
   const row = `<div class="sk-row"><div class="skeleton circle"></div><div class="skeleton"></div><div class="skeleton w3"></div></div>`;
@@ -1240,6 +1283,48 @@ $('#btnSettings').addEventListener('click', () => {
 function closeSheet() { applyTheme(S.theme); pendingTheme = S.theme; $('#sheet').classList.remove('on'); }
 $('#btnCancel').addEventListener('click', closeSheet);
 $('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) closeSheet(); });
+
+/* onboarding: first-run username entry (no settings sheet involved) */
+$('#main').addEventListener('submit', e => {
+  const f = e.target.closest('#onbForm'); if (!f) return;
+  e.preventDefault();
+  const u = $('#onbUser').value.trim();
+  if (!u) { $('#onbErr').textContent = 'Enter a Sleeper username to continue.'; return; }
+  S.username = u; store.set('username', u); S.error = null;
+  render(); loadAll();
+});
+
+/* share sheet */
+const APP_URL = 'https://tfak23.github.io/two-minute-drill/';
+const SHARE_TEXT = 'Two-Minute Drill \u2014 all your fantasy football lineups, across every league, in one place:';
+function openShareSheet() {
+  $('#shNative').hidden = typeof navigator.share !== 'function';
+  const body = encodeURIComponent(SHARE_TEXT + ' ' + APP_URL);
+  $('#shText').href = (IS_IOS ? 'sms:&body=' : 'sms:?body=') + body;
+  $('#shEmail').href = `mailto:?subject=${encodeURIComponent('Two-Minute Drill')}&body=${body}`;
+  $('#shWhats').href = `https://wa.me/?text=${body}`;
+  $('#shareSheet').classList.add('on');
+}
+function closeShareSheet() { $('#shareSheet').classList.remove('on'); }
+$('#btnShare').addEventListener('click', openShareSheet);
+$('#shCancel').addEventListener('click', closeShareSheet);
+$('#shareSheet').addEventListener('click', e => { if (e.target === $('#shareSheet')) closeShareSheet(); });
+$('#shNative').addEventListener('click', () => {
+  navigator.share({ title: 'Two-Minute Drill', text: SHARE_TEXT, url: APP_URL }).catch(() => {});
+});
+$('#shCopy').addEventListener('click', () => {
+  const txt = SHARE_TEXT + ' ' + APP_URL;
+  const flash = () => { const s0 = $('#shCopy span:last-child'), t = s0.textContent; s0.textContent = 'Copied \u2713'; setTimeout(() => { s0.textContent = t; }, 1500); };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); flash(); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(flash).catch(fallback);
+  else fallback();
+});
 $('#btnSave').addEventListener('click', () => {
   const u = $('#inUser').value.trim(); if (u && u !== S.username) { S.username = u; store.set('username', u); }
   S.showBench = $('#inBench').checked; store.set('showBench', S.showBench);
