@@ -403,12 +403,22 @@ nav.tabs button .n[hidden]{display:none}   /* display:grid above otherwise beats
         <div class="oerr" id="espnAddErr" style="min-height:1em;margin-top:5px"></div>
         <div class="ghint">1. In ESPN, make the league &ldquo;Viewable to Public&rdquo; (League &rarr; Settings) &mdash; private leagues usually won&rsquo;t load.<br>2. Open <b>My Team</b> for your team in that league.<br>3. Copy the page URL and paste it above.</div>
       </div>
+      <div class="frow" style="border-top:1px solid var(--line);padding-top:12px">
+        <label>Yahoo leagues</label>
+        <div class="lgs" id="yahooList"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="yahooUrlInput" placeholder="Paste your Yahoo team page URL" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1">
+          <button type="button" id="btnYahooAdd" class="linkbtn pri" style="height:auto;padding:0 16px">Add</button>
+        </div>
+        <div class="oerr" id="yahooAddErr" style="min-height:1em;margin-top:5px"></div>
+        <div class="ghint">1. Open your team&rsquo;s page in that Yahoo league (the URL looks like <code>.../f1/&lt;league&gt;/&lt;team&gt;</code>).<br>2. Copy the page URL and paste it above.<br>Yahoo&rsquo;s public pages don&rsquo;t expose NFL team assignments, so this shows your lineup (who&rsquo;s starting where) only &mdash; no live scores, bye/injury alerts, or conflict detection like Sleeper and ESPN get.</div>
+      </div>
       <div class="plats" id="platList"></div>
     </div>
   </div>
 
   <div class="btns"><button id="btnCancel">Cancel</button><button class="pri" id="btnSave">Save &amp; reload</button></div>
-  <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only) and ESPN&rsquo;s scoreboard/fantasy APIs. ESPN league linking is unofficial and works best for public leagues &mdash; it can change or break without notice. Lineup changes still happen on each platform &mdash; every league and alert has a one-tap link.</div>
+  <div class="ghint foot">Data comes straight from Sleeper&rsquo;s public API (read-only), ESPN&rsquo;s scoreboard/fantasy APIs, and (for lineups only) a small relay reading Yahoo&rsquo;s public roster pages. ESPN and Yahoo league linking are both unofficial and work best for public leagues &mdash; they can change or break without notice. Lineup changes still happen on each platform &mdash; every league and alert has a one-tap link.</div>
 </div></div>
 
 <div class="sheet" id="shareSheet"><div class="box small">
@@ -546,6 +556,79 @@ const logoImg = (t, cls = 'tl') => t ? `<img class="${cls}" src="${logoUrl(t)}" 
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+/* ---------- Yahoo fantasy lineup linking (public leagues, no login) ----------
+   Yahoo's own roster HTML exposes each starter's position (`data-pos`) and a link
+   to their player page, but — unlike ESPN's API — never the player's NFL team, so
+   there's no schedule to check against: no live scores, no bye/injury alerts, no
+   game-conflict detection for Yahoo leagues, just a read-only "who's starting
+   where" lineup card. Yahoo's pages also don't allow a direct cross-origin fetch,
+   so this goes through a tiny Apps Script relay (running under Tony's own Google
+   account) that fetches the roster URL server-side and returns parsed JSON.
+   Player IDs are namespaced 'yahoo:p:<id>' so they never collide with anyone else's. */
+const YAHOO_PROXY = 'https://script.google.com/macros/s/AKfycbwLT2NXH2Sh0lxdjQzn_8MHaSykJu284oQf_rphyL9RY-wczG_VgIl72KOXFruJASvx/exec';
+const YAHOO_STATUS = {};   // `${season}:${leagueId}:${teamId}` → { ok, name, error } — feeds the Settings list
+function parseYahooUrl(str) {
+  const s = String(str || '');
+  const m = s.match(/fantasysports\.yahoo\.com\/(\d{4})\/f1\/(\d+)\/(\d+)/);
+  if (!m) return null;
+  return { season: m[1], leagueId: m[2], teamId: m[3] };
+}
+async function fetchYahooRaw() {
+  return Promise.all((S.yahooLeagues || []).map(async cfg => {
+    try {
+      const rosterUrl = `https://football.fantasysports.yahoo.com/${cfg.season}/f1/${cfg.leagueId}/${cfg.teamId}`;
+      const data = await getJSON(`${YAHOO_PROXY}?url=${encodeURIComponent(rosterUrl)}`);
+      if (data && data.error) return { cfg, error: data.error };
+      return { cfg, data };
+    } catch (e) { return { cfg, error: e.message || String(e) }; }
+  }));
+}
+/* Turns the proxy's roster JSON into the same league-object shape ESPN/Sleeper build, minus
+   everything that depends on knowing a player's NFL team (pts, game, injury, opponent) — those
+   fields stay null/empty and `noSched: true` tells the renderer to skip the alert/score logic
+   that would otherwise read those nulls as "on bye" or "0.0 points". Never throws: a bad or
+   unexpected Yahoo response becomes an error card for that one league, not a broken app. */
+function buildYahooLeagueEntries(yahooRaw, ent, used) {
+  return (yahooRaw || []).map(entry => {
+    const { cfg } = entry;
+    const key = `${cfg.season}:${cfg.leagueId}:${cfg.teamId}`;
+    const id = `yahoo:${key}`;
+    const url = `https://football.fantasysports.yahoo.com/${cfg.season}/f1/${cfg.leagueId}/${cfg.teamId}`;
+    const fail = msg => {
+      const custom = String(S.abbrs[id] || '').trim().slice(0, 10);
+      const abbr = custom || abbrevLeague(`Yahoo ${cfg.leagueId}`, used);
+      if (custom) used.add(custom);
+      YAHOO_STATUS[key] = { ok: false, error: msg };
+      return { id, name: `Yahoo league ${cfg.leagueId}`, abbr, color: 0, plat: 'yahoo', scor: 2, url, murl: url,
+        starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '', teamName: '', error: msg, noSched: true };
+    };
+    if (entry.error || !entry.data) return fail(`Couldn't load (${entry.error || 'no data'}) — double-check the URL, or the league may not allow public viewing.`);
+    try {
+      const { data } = entry;
+      const roster = data.roster || [];
+      if (!roster.length) return fail('No roster rows found — Yahoo may have changed their page, or this league needs login.');
+      const [leagueNameRaw, teamNameRaw] = String(data.title || '').split(' - ');
+      const leagueName = (leagueNameRaw || `Yahoo league ${cfg.leagueId}`).trim();
+      const teamName = (teamNameRaw || '').trim();
+      const custom = String(S.abbrs[id] || '').trim().slice(0, 10);
+      const abbr = custom || abbrevLeague(leagueName, used);
+      if (custom) used.add(custom);
+      const out = { id, name: leagueName, abbr, color: 0, plat: 'yahoo', scor: 2, url, murl: url,
+        starters: [], bench: [], opp: null, myPts: 0, oppPts: null, record: '', teamName, noSched: true };
+      for (const p of roster) {
+        const pid = 'yahoo:p:' + p.yahooId;
+        const info = { n: p.name, p: p.slot, t: null, i: null, ib: null, s: null, num: null, noSched: true };
+        const bn = p.slot === 'BN' || p.slot === 'IR';
+        const row = { pid, slot: p.slot, info, pts: null, game: null, empty: false, bn };
+        if (bn) { out.bench.push(row); ent(pid, info).bench.push(out); }
+        else { out.starters.push(row); ent(pid, info).start.push(out); }
+      }
+      YAHOO_STATUS[key] = { ok: true, name: out.name };
+      return out;
+    } catch (e) { return fail(`Unexpected response shape (${e.message || e}).`); }
+  });
+}
+
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {
@@ -567,6 +650,7 @@ const S = {
   hiddenLeagues: store.get('hiddenLeagues', []),
   abbrs: store.get('abbrs', {}),
   espnLeagues: store.get('espnLeagues', []),   // [{leagueId, teamId}]
+  yahooLeagues: store.get('yahooLeagues', []), // [{season, leagueId, teamId}]
   playersFilter: 'all',
   parlaySize: store.get('parlaySize', 3),
   parlayPicks: [],
@@ -812,8 +896,8 @@ async function loadAll() {
     const week = state.leg || state.week || 1, season = state.season;
     const user = await getJSON(`${API}/user/${encodeURIComponent(S.username)}`);
     if (!user || !user.user_id) throw new Error(`Sleeper user "${S.username}" not found`);
-    const [leaguesRaw, players, gm, proj, espnRaw] = await Promise.all([
-      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season), loadProj(season, week), fetchEspnRaw(season)
+    const [leaguesRaw, players, gm, proj, espnRaw, yahooRaw] = await Promise.all([
+      getJSON(`${API}/user/${user.user_id}/leagues/nfl/${season}`), loadPlayers(), loadGames(week, season), loadProj(season, week), fetchEspnRaw(season), fetchYahooRaw()
     ]);
     const leagues = await Promise.all(leaguesRaw.map(async (L, idx) => {
       const [rosters, users, matchups] = await Promise.all([
@@ -821,7 +905,7 @@ async function loadAll() {
       ]);
       return { raw: L, idx, rosters, users, matchups };
     }));
-    S.model = buildModel({ state, week, season, user, leagues, espnRaw, players, games: gm.games, gameList: gm.list, proj });
+    S.model = buildModel({ state, week, season, user, leagues, espnRaw, yahooRaw, players, games: gm.games, gameList: gm.list, proj });
     S.everLoaded = true;
     S.updated = new Date();
     store.set('view', S.view);
@@ -845,7 +929,7 @@ function abbrevLeague(name, used) {
   used.add(b); return b;
 }
 
-function buildModel({ state, week, season, user, leagues, espnRaw, players, games, gameList, proj = {} }) {
+function buildModel({ state, week, season, user, leagues, espnRaw, yahooRaw, players, games, gameList, proj = {} }) {
   const me = user.user_id;
   const used = new Set();
   const P = id => players[id] || { n: id, p: '?', t: null, i: null };
@@ -916,6 +1000,7 @@ function buildModel({ state, week, season, user, leagues, espnRaw, players, game
 
   // ESPN leagues fold into the same array so alerts/conflicts/Games/Players treat them like Sleeper's.
   L.push(...buildEspnLeagueEntries(espnRaw, week, games, proj, ent, used));
+  L.push(...buildYahooLeagueEntries(yahooRaw, ent, used));
   L.sort((a, b) => a.name.localeCompare(b.name));
   L.forEach((lg, i) => { lg.color = i % 8; });
 
@@ -927,7 +1012,8 @@ function buildModel({ state, week, season, user, leagues, espnRaw, players, game
       if (r.empty) { alerts.push({ sev: 3, kind: 'o', title: `Empty ${slotLabel(r.slot)} slot`, desc: `You have an open starting spot in ${lg.name}.`, leagues: [lg], spots: [{ lg, slot: r.slot }], pid: null }); continue; }
       const p = r.info;
       const sev = SEV[p.i] || 0;
-      if (!p.t) alerts.push({ sev: 3, kind: 'o', title: `${p.n} has no team`, desc: `Starting at ${slotLabel(r.slot)} in ${lg.name} — free agent / inactive.`, leagues: [lg], pid: r.pid });
+      if (lg.noSched) { /* Yahoo: no per-player team/schedule data, so no bye/no-team/injury alerts can be trusted */ }
+      else if (!p.t) alerts.push({ sev: 3, kind: 'o', title: `${p.n} has no team`, desc: `Starting at ${slotLabel(r.slot)} in ${lg.name} — free agent / inactive.`, leagues: [lg], pid: r.pid });
       else if (!r.game && Object.keys(games).length) alerts.push({ sev: 3, kind: 'o', title: `${p.n} is on bye`, desc: `${p.p}, ${p.t} · in your ${slotLabel(r.slot)} slot in ${lg.name}.`, leagues: [lg], spots: [{ lg, slot: r.slot, locked: false }], pid: r.pid, bye: true });
       // a player who got hurt in a game that's already over is news, not a decision -- skip it
       const done = !!(r.game && (r.game.state === 'post' || r.game.completed));
@@ -996,7 +1082,7 @@ function slotLabel(s) { return SLOT_LABEL[s] || s; }
 const PLATFORMS = {
   sleeper: { name: 'Sleeper', icon: 'https://sleeper.com/favicon.ico', live: true },
   espn:    { name: 'ESPN',    icon: 'https://a.espncdn.com/favicon.ico', live: true },
-  yahoo:   { name: 'Yahoo',   icon: 'https://s.yimg.com/rz/l/favicon.ico', live: false },
+  yahoo:   { name: 'Yahoo',   icon: 'https://s.yimg.com/rz/l/favicon.ico', live: true },
   nfl:     { name: 'NFL.com', icon: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png', live: false }
 };
 const platIcon = (k, cls = 'pi') => { const pf = PLATFORMS[k] || PLATFORMS.sleeper; return `<img class="${cls}" src="${pf.icon}" alt="${esc(pf.name)}" loading="lazy" onerror="this.style.display='none'">`; };
@@ -1010,6 +1096,7 @@ function gameStatus(g, opts = {}) {
 }
 function oppText(r) {
   const g = r.game, t = r.info.t;
+  if (r.info.noSched) return 'Lineup only';
   if (!t) return 'FA';
   if (!g) return `${t} · BYE`;
   const o = g.home === t ? `vs ${g.away}` : `@ ${g.home}`;
@@ -1025,9 +1112,9 @@ function ptsCell(r) {
    /topics/, /channels/, /topic/ and /message/ (chat), and the sleeper:// scheme ignores any league
    path and drops you on whatever league the app had open last. So 'web' is the default -- sleeper.com
    lands on the exact league every time. 'app' stays available for anyone who wants the app regardless. */
-function schemeHref(lg) { return lg.plat === 'espn' ? '' : 'sleeper://leagues/' + lg.id; }
+function schemeHref(lg) { return (lg.plat === 'espn' || lg.plat === 'yahoo') ? '' : 'sleeper://leagues/' + lg.id; }
 function appHref(lg, web) {
-  if (lg.plat === 'espn' || S.linkMode !== 'app') return web;
+  if (lg.plat === 'espn' || lg.plat === 'yahoo' || S.linkMode !== 'app') return web;
   if (IS_ANDROID) return `intent://sleeper.com/leagues/${lg.id}#Intent;scheme=https;package=com.sleeperbot;S.browser_fallback_url=${encodeURIComponent(web)};end`;
   return web;
 }
@@ -1115,7 +1202,8 @@ function scoreStrip(m) {
       line = l.record || '—';
     }
     const url = l.opp ? l.murl : l.url;
-    return `<a class="sc ${cls}" href="${esc(appHref(l, url))}" data-web="${esc(url)}" target="_blank" rel="noopener" title="${esc(l.name)}"><div class="ab"><span class="sq l${l.color}"></span>${esc(l.abbr)}</div><div class="pts">${l.myPts.toFixed(1)}</div><div class="vs">${esc(line)}</div></a>`;
+    const pts = l.noSched ? '—' : l.myPts.toFixed(1);
+    return `<a class="sc ${cls}" href="${esc(appHref(l, url))}" data-web="${esc(url)}" target="_blank" rel="noopener" title="${esc(l.name)}"><div class="ab"><span class="sq l${l.color}"></span>${esc(l.abbr)}</div><div class="pts">${pts}</div><div class="vs">${esc(line)}</div></a>`;
   }).join('');
   const tot = h2h.length ? `<span class="tot">Winning ${up} of ${h2h.length}</span>` : '';
   return `<div class="scwrap"><div class="scline">This week ${tot}</div><div class="scores">${cards}</div></div>`;
@@ -1221,23 +1309,26 @@ function vLeagues(m) {
   let h = '';
   for (const lg of m.leagues) {
     h += `<div class="card ${S.showBench ? 'showbench' : ''}"><div class="lhead"><span class="sq l${lg.color}"></span><div class="t"><div class="n">${esc(lg.name)}</div><div class="m">${lg.error ? esc(lg.error) : `${esc(lg.record)} · ${esc(lg.teamName || '')}${lg.opp ? ` vs ${esc(lg.opp.name)}` : ' · no head-to-head'}`}</div></div>`;
-    if (!lg.error) h += `<div class="score"><div class="big">${lg.myPts.toFixed(1)}${lg.opp ? `<span style="color:var(--faint);font-weight:600;font-size:14px"> – ${lg.opp.pts.toFixed(1)}</span>` : ''}</div><div class="sm">${lg.opp ? (lg.myPts > lg.opp.pts ? 'ahead' : lg.myPts < lg.opp.pts ? 'behind' : 'tied') : 'points'}</div></div>`;
+    if (!lg.error && lg.noSched) h += `<div class="score"><div class="sm" style="padding-top:14px">Lineup only</div></div>`;
+    else if (!lg.error) h += `<div class="score"><div class="big">${lg.myPts.toFixed(1)}${lg.opp ? `<span style="color:var(--faint);font-weight:600;font-size:14px"> – ${lg.opp.pts.toFixed(1)}</span>` : ''}</div><div class="sm">${lg.opp ? (lg.myPts > lg.opp.pts ? 'ahead' : lg.myPts < lg.opp.pts ? 'behind' : 'tied') : 'points'}</div></div>`;
     h += `</div>`;
     if (lg.error) { h += `<div class="row"><div class="main"><div class="meta">${sleeperLink(lg, 'Open league', null, 'sec')}</div></div></div></div>`; continue; }
-    h += lg.starters.map(r => playerRow(r, false)).join('');
+    h += lg.starters.map(r => playerRow(r, false, lg.noSched)).join('');
     if (lg.bench.length) {
-      h += lg.bench.map(r => playerRow(r, true)).join('');
+      h += lg.bench.map(r => playerRow(r, true, lg.noSched)).join('');
       h += `<button class="benchtoggle" data-bench>${S.showBench ? 'Hide' : 'Show'} bench (${lg.bench.length})</button>`;
     }
     h += `<div class="row" style="justify-content:flex-end;gap:8px">${sleeperLink(lg, 'Matchup', lg.murl, 'sec')}${sleeperLink(lg, 'Edit lineup', null, 'pri')}</div></div>`;
   }
   return h;
 }
-function playerRow(r, bench) {
+function playerRow(r, bench, noSched) {
   if (r.empty) return `<div class="row"><div class="slot">${esc(slotLabel(r.slot))}</div><div class="main"><div class="name" style="color:var(--red)">Empty slot</div></div></div>`;
   const p = r.info;
-  const warn = (SEV[p.i] || 0) >= 2 || (!r.game && !bench) || !p.t;
-  return `<div class="row ${bench ? 'bench' : ''}" ${warn ? 'style="background:color-mix(in srgb,var(--red-soft) 45%,transparent)"' : ''}><div class="slot">${esc(slotLabel(r.slot))}</div>${logoImg(p.t, 'tl md')}<div class="main"><div class="name"><span class="pos">${esc(p.p)}</span>${esc(p.n)} ${injBadge(p)}</div><div class="meta">${esc(oppText(r))}</div></div><div class="right">${ptsCell(r)}${gameStatus(r.game)}</div></div>`;
+  const warn = !noSched && ((SEV[p.i] || 0) >= 2 || (!r.game && !bench) || !p.t);
+  const meta = esc(oppText(r));
+  const right = noSched ? '' : `${ptsCell(r)}${gameStatus(r.game)}`;
+  return `<div class="row ${bench ? 'bench' : ''}" ${warn ? 'style="background:color-mix(in srgb,var(--red-soft) 45%,transparent)"' : ''}><div class="slot">${esc(slotLabel(r.slot))}</div>${logoImg(p.t, 'tl md')}<div class="main"><div class="name"><span class="pos">${esc(p.p)}</span>${esc(p.n)} ${injBadge(p)}</div><div class="meta">${meta}</div></div><div class="right">${right}</div></div>`;
 }
 
 function vPlayers(m) {
@@ -1409,13 +1500,37 @@ $('#btnEspnAdd').addEventListener('click', () => {
   paintEspnList();
   loadAll().then(paintEspnList);
 });
+function paintYahooList() {
+  const box = $('#yahooList');
+  if (!S.yahooLeagues.length) { box.innerHTML = `<div class="ghint" style="border:0;padding:6px 0">No Yahoo leagues added yet.</div>`; return; }
+  box.innerHTML = S.yahooLeagues.map(cfg => {
+    const key = `${cfg.season}:${cfg.leagueId}:${cfg.teamId}`;
+    const st = YAHOO_STATUS[key];
+    const label = (st && st.name) || `League ${cfg.leagueId} (team ${cfg.teamId})`;
+    const sub = st && st.error ? `<span style="color:var(--red)">${esc(st.error)}</span>` : st && st.ok ? 'Loaded (lineup only)' : 'Not loaded yet — Save to fetch it';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(label)}</div><div style="font-size:11.5px;color:var(--faint);margin-top:1px">${sub}</div></div><button type="button" class="mini-b" data-yahoo-rm="${esc(key)}" aria-label="Remove ${esc(label)}">&#10005;</button></div>`;
+  }).join('');
+}
+$('#btnYahooAdd').addEventListener('click', () => {
+  const err = $('#yahooAddErr');
+  const parsed = parseYahooUrl($('#yahooUrlInput').value);
+  if (!parsed) { err.textContent = 'Couldn’t find a season, league and team in that URL — copy it from your team’s page.'; return; }
+  const key = `${parsed.season}:${parsed.leagueId}:${parsed.teamId}`;
+  if (S.yahooLeagues.some(c => `${c.season}:${c.leagueId}:${c.teamId}` === key)) { err.textContent = 'That league is already added.'; return; }
+  S.yahooLeagues = [...S.yahooLeagues, parsed];
+  store.set('yahooLeagues', S.yahooLeagues);
+  err.textContent = ''; $('#yahooUrlInput').value = '';
+  paintYahooList();
+  loadAll().then(paintYahooList);
+});
 $('#btnSettings').addEventListener('click', () => {
   $('#inUser').value = S.username;
   $('#inBench').checked = S.showBench;
   $('#inHideFinal').checked = S.hideFinal;
-  $('#platList').innerHTML = Object.keys(PLATFORMS).filter(k => k !== 'espn').map(k => { const pf = PLATFORMS[k];
+  $('#platList').innerHTML = Object.keys(PLATFORMS).filter(k => k !== 'espn' && k !== 'yahoo').map(k => { const pf = PLATFORMS[k];
     return `<div class="plat">${platIcon(k, 'pi lg')}<span class="nm">${esc(pf.name)}</span><span class="pchip${pf.live ? ' on' : ''}">${pf.live ? 'Connected' : 'Coming soon'}</span></div>`; }).join('');
   paintEspnList();
+  paintYahooList();
   $('#inLink').value = S.linkMode;
   $('#inSuggest').checked = S.suggest;
   $('#inOdds').checked = S.showOdds;
@@ -1429,6 +1544,8 @@ $('#btnCancel').addEventListener('click', closeSheet);
 $('#sheet').addEventListener('click', e => {
   const rm = e.target.closest('[data-espn-rm]');
   if (rm) { const key = rm.dataset.espnRm; S.espnLeagues = S.espnLeagues.filter(c => `${c.leagueId}:${c.teamId}` !== key); store.set('espnLeagues', S.espnLeagues); delete ESPN_STATUS[key]; paintEspnList(); loadAll(); return; }
+  const yrm = e.target.closest('[data-yahoo-rm]');
+  if (yrm) { const key = yrm.dataset.yahooRm; S.yahooLeagues = S.yahooLeagues.filter(c => `${c.season}:${c.leagueId}:${c.teamId}` !== key); store.set('yahooLeagues', S.yahooLeagues); delete YAHOO_STATUS[key]; paintYahooList(); loadAll(); return; }
   if (e.target === $('#sheet')) closeSheet();
 });
 
